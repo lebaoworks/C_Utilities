@@ -23,7 +23,9 @@ $(OBJECTS) : | $(OBJDIR)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-debug: clean $(eval CFLAGS += -g) all
+debug: clean $(eval CFLAGS += -g) $(OBJECTS)
+	$(CC) $(CFLAGS) server.c $(OBJECTS) -o server $(LDFLAGS)
+	$(CC) $(CFLAGS) client.c $(OBJECTS) -o client $(LDFLAGS)
 	
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR) $(TARGET) server client uds_server

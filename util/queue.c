@@ -8,7 +8,7 @@
  * 
  * @param limit maximum number of entries, 0 for unlimited entries.
  * 
- * @return pointer to queue's handle
+ * @return pointer to queue's handle, NULL if failed
  * @note Call destroy() to release memory
  */
 static QueueHandle* create(unsigned int limit) {
@@ -34,11 +34,11 @@ static void destroy(QueueHandle *handle, bool free_data)
 {
     if (free_data == true)
     {
-        void* value;
+        void* addr;
         while (!Queue.empty(handle))
         {
-            value = Queue.pop(handle);
-            free(value);
+            addr = Queue.pop(handle);
+            free(addr);
         }
     }
     pthread_mutex_destroy(&handle->mutex);

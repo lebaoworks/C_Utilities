@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build active file",
+            // "preLaunchTask": "build active file",
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
