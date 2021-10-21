@@ -3,19 +3,24 @@
 #define _GNU_SOURCE
 
 #include <stdbool.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+#include <stdint.h>
 
-typedef void (*HandleFunc)(int fd);
+typedef void (*UDSocketDispatcher)(int fd);
+typedef struct _UDSocketCred {
+    uint64_t pid;
+    uint64_t uid;
+    uint64_t gid;
+} UDSocketCred;
 
 typedef struct {
     int     (*const create)     ();
     bool    (*const connect)    (int fd, char* endpoint);
-    bool    (*const bind)       (int fd, char* endpoint);
-    bool    (*const listen)     (int fd, int n);
-    // void    (*const service)    (bool* stop, HandleFunc func, bool block);
-    // void    (*const close)      (int fd);
+    bool    (*const listen_on)  (int fd, char* endpoint, int n);
+    void    (*const service)    (int fd, bool* stop, UDSocketDispatcher func);
+    int     (*const close)      (int fd);
 
-} _UnixDomainSocket;
+    void    (*const get_cred)   (int fd, UDSocketCred* peer_cred);
 
-extern _UnixDomainSocket const UnixDomainSocket;
+} _UDSocket;
+
+extern _UDSocket const UDSocket;

@@ -1,7 +1,7 @@
 CC = gcc
 
 # Compile flags
-CFLAGS = -Wall
+CFLAGS = -Wall -dM
 
 # Library flags
 LDFLAGS = 

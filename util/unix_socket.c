@@ -4,8 +4,11 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <sys/un.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+
 
 /**
  * @brief Create new unix domain socket.
@@ -28,11 +31,11 @@ static int create() {
  * @return true if success, false otherwise
  */
 static bool _connect(int fd, char* endpoint) {
+    struct sockaddr_un addr;
     int len = 0;
-    if ((len = strlen(endpoint)) > 107)
+    if ((len = strlen(endpoint)) > sizeof(addr.sun_path))
         return false;
 
-    struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     memcpy(addr.sun_path, endpoint, len);
@@ -46,14 +49,15 @@ static bool _connect(int fd, char* endpoint) {
 }
 
 /**
- * @brief Bind to endpoint
+ * @brief Listen on endpoint
  * 
  * @param fd file descriptor for the socket
  * @param endpoint endpoint address represents as a null-terminated string
+ * @param n maximum number of queued connections
  * 
  * @return true if success, false otherwise
  */
-static bool _bind(int fd, char* endpoint) {
+bool listen_on(int fd, char* endpoint, int n) {
     int len = strlen(endpoint);
     if (len > 107)
         return false;
@@ -69,37 +73,58 @@ static bool _bind(int fd, char* endpoint) {
 
     if (bind(fd, (struct sockaddr*) &addr, sizeof(addr)) < 0)
         return false;
-    return true;
-}
-
-/**
- * @brief Listen on the endpoint
- * 
- * @param fd file descriptor for the socket
- * @param n maximum number of queued connections
- * 
- * @return true if success, false otherwise
- */
-static bool _listen(int fd, int n) {
+    
     if (listen(fd, n) == -1)
         return false;
     return true;
 }
 
 /**
- * @brief Listen on the endpoint
+ * @brief Service
  * 
- * @param stop pointer to file descriptor for the socket
- * @param n maximum number of queued connections
- * 
- * @return true if success, false otherwise
+ * @param fd file descriptor for the socket
+ * @param stop condition for loop, set true to stop accepting connection
+ * @param func call this function to handle connection,
+ *      this function must close the socket
  */
-// static void service(bool* stop, HandleFunc func, bool block);
+void service(int fd, bool* stop, UDSocketDispatcher func)
+{
+    int cfd;
+    while (!*stop)
+    {
+        cfd = accept(fd, NULL, NULL);
+        if (cfd != -1)
+            func(cfd);
+    }
+}
 
-
-_UnixDomainSocket const UnixDomainSocket = {
+/**
+ * @brief Get peer credentials
+ * 
+ * @param fd file descriptor for peer's connection
+ * @param peer_cred save credentials, default value for every field is 0
+ */
+static void get_cred(int fd, UDSocketCred* peer_cred)
+{
+    memset(peer_cred, 0, sizeof(UDSocketCred));
+    #ifdef __linux__
+    struct ucred ucred;
+    unsigned int len = sizeof(struct ucred);
+    if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &ucred, &len) == -1)
+        return;
+    peer_cred->pid = ucred.pid;
+    peer_cred->uid = ucred.uid;
+    peer_cred->gid = ucred.gid;
+    #endif
+    #ifdef __APPLE__
+    #endif
+}
+_UDSocket const UDSocket = {
     create,
     .connect = _connect,
-    .bind = _bind,
-    .listen = _listen,
+    listen_on,
+    service,
+    close,
+
+    get_cred,
 };

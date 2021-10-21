@@ -4,8 +4,8 @@
 
 int main()
 {
-    int fd = UnixDomainSocket.create();
-    if (!UnixDomainSocket.connect(fd, "uds_server"))
+    int fd = UDSocket.create();
+    if (!UDSocket.connect(fd, "uds_server"))
         printf("Failed to connect.");
     return 0;
 }
