@@ -23,7 +23,7 @@ $(OBJECTS) : | $(OBJDIR)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
-debug: clean $(eval CFLAGS += -g) $(OBJECTS)
+com: clean $(eval CFLAGS += -g) $(OBJECTS)
 	$(CC) $(CFLAGS) server.c $(OBJECTS) -o server $(LDFLAGS)
 	$(CC) $(CFLAGS) client.c $(OBJECTS) -o client $(LDFLAGS)
 	

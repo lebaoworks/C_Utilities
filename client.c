@@ -1,14 +1,14 @@
 #include <stdio.h>
-#include "util/queue.h"
-#include "util/unix_socket.h"
-
-#define endpoint "/var/tmp/uds_socket/socket"
-#define sock_dir "/var/tmp/uds_socket"
+#include "util/ipc.h"
+#include "ipc_shared.h"
 
 int main()
 {
-    int fd = UDSocket.create();
-    if (!UDSocket.connect(fd, endpoint))
-        printf("Failed to connect.");
+    IPCEndpoint endpoint = {
+        .path = IPC_ENDPOINT
+    };
+    IPCConnect *connect = IPC.connect(&endpoint);
+    printf("connect: %p\n", connect);
+    client_handle(connect);
     return 0;
 }
