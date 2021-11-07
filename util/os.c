@@ -40,7 +40,7 @@ char* dirname(char* path)
         return NULL;
     
     size_t len = (size_t) (lastSlash - path);
-    char *ret = malloc(len+1);
+    char *ret = (char*) malloc(len+1);
     if (ret == NULL)
         return NULL;
 

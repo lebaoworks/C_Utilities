@@ -25,7 +25,7 @@ static int new_fd()
  * 
  * @return number of bytes sent
  */
-static int sendn(int fd, char *buffer, int n)
+static size_t sendn(int fd, void *buffer, size_t n)
 {
     int nwrite, save = n;
     while (n > 0)
@@ -41,7 +41,7 @@ static int sendn(int fd, char *buffer, int n)
             else
             {
                 n -= nwrite;
-                buffer += nwrite;
+                buffer = (char*)buffer + nwrite;
             }
     return save-n;
 }
@@ -55,7 +55,7 @@ static int sendn(int fd, char *buffer, int n)
  * 
  * @return number of bytes received
  */
-static int recvn(int fd, char *buffer, int n)
+static size_t recvn(int fd, void *buffer, size_t n)
 {
     int nread, save = n;
     while (n > 0)
@@ -70,7 +70,7 @@ static int recvn(int fd, char *buffer, int n)
             else
             {
                 n -= nread;
-                buffer += nread;
+                buffer = (char*) buffer + nread;
             }
     return save-n;
 }
@@ -177,7 +177,7 @@ static void _serve(IPCEndpoint *endpoint)
  */
 static IPCConnect* _get_connect(IPCEndpoint *endpoint)
 {
-    IPCConnect *connect = calloc(1, sizeof(IPCConnect));
+    IPCConnect *connect = (IPCConnect*) calloc(1, sizeof(IPCConnect));
     if (connect == NULL)
         return NULL;
     int cfd = accept(endpoint->fd, NULL, NULL);
@@ -201,7 +201,7 @@ static IPCConnect* _get_connect(IPCEndpoint *endpoint)
 static IPCConnect* _connect(IPCEndpoint *endpoint)
 {
     if (strlen(endpoint->path) > sizeof(((struct sockaddr_un *)0)->sun_path) - 1)    // preserve 1 byte for null
-        return false;
+        return NULL;
 
     // Connect
     int fd = new_fd();
@@ -212,18 +212,20 @@ static IPCConnect* _connect(IPCEndpoint *endpoint)
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, endpoint->path);
     if (connect(fd, (struct sockaddr*) &addr, sizeof(addr)) == -1)
-        goto FAIL;
+    {
+        close(fd);
+        return NULL;
+    }
 
     // Alloc return
-    IPCConnect *connect = calloc(1, sizeof(IPCConnect));
+    IPCConnect *connect = (IPCConnect*) calloc(1, sizeof(IPCConnect));
     if (connect == NULL)
-        goto FAIL;
+    {
+        close(fd);
+        return NULL;
+    }
     connect->fd = fd;
     return connect;
-
-    FAIL:
-    close(fd);
-    return NULL;
 }
 
 /**
@@ -244,8 +246,8 @@ static bool _send(IPCConnect *connect, void *obj)
 
     // Send data   
     bool ret = true;
-    if (sendn(connect->fd, (char*) &data_size, sizeof(uint32_t)) == sizeof(uint32_t))
-        ret = sendn(connect->fd, data, data_size) == data_size;
+    if (sendn(connect->fd, (void*) &data_size, sizeof(uint32_t)) == sizeof(uint32_t))
+        ret = sendn(connect->fd, (char*) data, data_size) == data_size;
     if (alloc)
         free(data);
     return ret;
@@ -267,23 +269,23 @@ static void* _recv(IPCConnect *connect)
         return NULL;
     if ((data = malloc(data_size)) == NULL)
         return NULL;
-    int recv = 0;
-    if ((recv=recvn(connect->fd, data, data_size)) != data_size)
-        goto FAIL;
+    if (recvn(connect->fd, data, data_size) != data_size)
+    {
+        free(data);
+        return NULL;
+    }
     
     // Deserialize data
     void* obj = connect->deserialize(data, data_size, &alloc);
     if (obj == NULL)
-        goto FAIL;
+    {
+        free(data);
+        return NULL;
+    }
     if (alloc)
         free(data);
 
-    return obj;
-
-    FAIL:
-    free(data);
-    return NULL;
-    
+    return obj;   
 }
 
 /**
@@ -305,7 +307,7 @@ static void _close(IPCConnect* connect)
  */
 static IPCCredential* _get_cred(IPCConnect *connect)
 {
-    IPCCredential *cred = calloc(1, sizeof(IPCCredential));
+    IPCCredential *cred = (IPCCredential*) calloc(1, sizeof(IPCCredential));
     if (cred == NULL)
         return NULL;
 

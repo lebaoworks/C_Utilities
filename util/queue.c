@@ -12,7 +12,7 @@
  * @note Call destroy() to release memory
  */
 static QueueHandle* create(unsigned int limit) {
-    QueueHandle *handle = calloc(1, sizeof(QueueHandle));
+    QueueHandle *handle = (QueueHandle*) calloc(1, sizeof(QueueHandle));
     if (handle == NULL)
         return NULL;
     if (pthread_mutex_init(&handle->mutex, NULL) != 0)
@@ -58,11 +58,16 @@ static bool push(QueueHandle *handle, void *addr)
     pthread_mutex_lock(&handle->mutex);
 
     if (handle->limit!=0 && handle->count == handle->limit)
-        goto fail;
-
-    QueueEntry *entry = malloc(sizeof(QueueEntry));
+    {
+        pthread_mutex_unlock(&handle->mutex);
+        return false;
+    }
+    QueueEntry *entry = (QueueEntry*) malloc(sizeof(QueueEntry));
     if (entry == NULL)
-        goto fail;
+    {
+        pthread_mutex_unlock(&handle->mutex);
+        return false;
+    }
     entry->value = addr;
     entry->next = NULL;
 
@@ -78,10 +83,6 @@ static bool push(QueueHandle *handle, void *addr)
 
     pthread_mutex_unlock(&handle->mutex);
     return true;
-
-    fail:
-    pthread_mutex_unlock(&handle->mutex);
-    return false;
 }
 
 /**
@@ -96,7 +97,10 @@ static void* pop(QueueHandle *handle)
     pthread_mutex_lock(&handle->mutex);
 
     if (handle->count == 0)
-        goto fail;
+    {
+        pthread_mutex_unlock(&handle->mutex);
+        return NULL;
+    }
     QueueEntry *head = handle->head;
     void* addr = head->value;
     handle->head = handle->head->next;
@@ -105,10 +109,6 @@ static void* pop(QueueHandle *handle)
     
     pthread_mutex_unlock(&handle->mutex);
     return addr;
-
-    fail:
-    pthread_mutex_unlock(&handle->mutex);
-    return NULL;
 }
 
 /**
