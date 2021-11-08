@@ -18,9 +18,8 @@ bool serialize(void *obj, void **pdata, uint32_t *data_size, bool *alloc)
 }
 void* deserialize(void *obj, uint32_t data_size, bool *alloc)
 {
-    json parsed = json::parse((char*) obj);
     json* x = new json;
-    *x = parsed;
+    *x = json::parse((char*) obj);
     *alloc = true;
     return (void*) x;
 }
