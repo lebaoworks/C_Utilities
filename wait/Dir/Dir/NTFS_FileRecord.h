@@ -15,6 +15,7 @@ typedef
 class CNTFSVolume
 {
 public:
+	CNTFSVolume() {}
 	CNTFSVolume(_TCHAR volume);
 	virtual ~CNTFSVolume();
 
@@ -100,7 +101,7 @@ private:
 	BOOL ParseAttr(ATTR_HEADER_COMMON* ahc);
 	FILE_RECORD_HEADER* ReadFileRecord(ULONGLONG& fileRef);
 	BOOL VisitIndexBlock(const ULONGLONG& vcn, const _TCHAR* fileName, CIndexEntry& ieFound) const;
-	void TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCallBack) const;
+	void TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const;
 
 public:
 	BOOL ParseFileRecord(ULONGLONG fileRef);
@@ -118,7 +119,7 @@ public:
 	__inline ULONGLONG GetFileSize() const;
 	void GetFileTime(FILETIME* writeTm, FILETIME* createTm = NULL, FILETIME* accessTm = NULL) const;
 
-	void TraverseSubEntries(SUBENTRY_CALLBACK seCallBack) const;
+	void TraverseSubEntries(SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const;
 	__inline const BOOL FindSubEntry(const _TCHAR* fileName, CIndexEntry& ieFound) const;
 	const CAttrBase* FindStream(_TCHAR* name = NULL);
 
@@ -297,9 +298,13 @@ FILE_RECORD_HEADER* CFileRecord::ReadFileRecord(ULONGLONG& fileRef)
 	{
 		LARGE_INTEGER addr;
 		DWORD ret;
-		addr.QuadPart = Volume->MFTAddr + (Volume->FileRecordSize) * FileReference;
+		addr.QuadPart = Volume->MFTAddr + (Volume->FileRecordSize) * fileRef;
 		if (SetFilePointer(Volume->hVolume, addr.LowPart, &addr.HighPart, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+		{
+			printf("%d\n", GetLastError());
 			return NULL;
+		}
+			
 
 		FILE_RECORD_HEADER* fr = (FILE_RECORD_HEADER*) new BYTE[Volume->FileRecordSize];
 		if (!ReadFile(Volume->hVolume, fr, Volume->FileRecordSize, &ret, NULL) || ret != Volume->FileRecordSize)
@@ -431,7 +436,7 @@ BOOL CFileRecord::VisitIndexBlock(const ULONGLONG& vcn, const _TCHAR* fileName, 
 
 // Traverse SubNode recursivly in ascending order
 // Call user defined callback routine once found an subentry
-void CFileRecord::TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCallBack) const
+void CFileRecord::TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const
 {
 	CAttr_IndexAlloc* ia = (CAttr_IndexAlloc*)FindFirstAttr(ATTR_TYPE_INDEX_ALLOCATION);
 	if (ia == NULL)
@@ -444,10 +449,10 @@ void CFileRecord::TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCall
 		while (ie)
 		{
 			if (ie->IsSubNodePtr())
-				TraverseSubNode(ie->GetSubNodeVCN(), seCallBack);	// recursive call
+				TraverseSubNode(ie->GetSubNodeVCN(), seCallBack, callback_param);	// recursive call
 
 			if (ie->HasName())
-				seCallBack(ie);
+				seCallBack(ie, callback_param);
 
 			ie = ib.FindNextEntry();
 		}
@@ -610,7 +615,7 @@ void CFileRecord::GetFileTime(FILETIME* writeTm, FILETIME* createTm, FILETIME* a
 
 // Traverse all sub directories and files contained
 // Call user defined callback routine once found an entry
-void CFileRecord::TraverseSubEntries(SUBENTRY_CALLBACK seCallBack) const
+void CFileRecord::TraverseSubEntries(SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const
 {
 	_ASSERT(seCallBack);
 
@@ -626,10 +631,10 @@ void CFileRecord::TraverseSubEntries(SUBENTRY_CALLBACK seCallBack) const
 	{
 		// Visit subnode first
 		if (ie->IsSubNodePtr())
-			TraverseSubNode(ie->GetSubNodeVCN(), seCallBack);
+			TraverseSubNode(ie->GetSubNodeVCN(), seCallBack, callback_param);
 
 		if (ie->HasName())
-			seCallBack(ie);
+			seCallBack(ie, callback_param);
 
 		ie = ieList->FindNextEntry();
 	}
@@ -807,6 +812,7 @@ CNTFSVolume::CNTFSVolume(_TCHAR volume)
 
 CNTFSVolume::~CNTFSVolume()
 {
+	printf("Close Volume\n");
 	if (hVolume != INVALID_HANDLE_VALUE)
 		CloseHandle(hVolume);
 

@@ -18,10 +18,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="subprocess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -42,6 +45,12 @@
       <Filter>NTFSParser</Filter>
     </ClInclude>
     <ClInclude Include="subprocess.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mft.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cppstring.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

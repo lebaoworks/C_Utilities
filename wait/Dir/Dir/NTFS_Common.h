@@ -59,7 +59,7 @@ typedef void (*ATTRS_CALLBACK)(const CAttrBase* attr, void* context, BOOL* bStop
 // User defined Callback routine to handle Directory traversing
 // Will be called by CFileRecord::TraverseSubEntries for each sub entry
 class CIndexEntry;
-typedef void (*SUBENTRY_CALLBACK)(const CIndexEntry* ie);
+typedef void (*SUBENTRY_CALLBACK)(const CIndexEntry* ie, PVOID callback_param);
 
 
 // List Entry
