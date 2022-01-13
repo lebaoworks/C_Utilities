@@ -43,8 +43,8 @@ void RunCmdAndGetText(wstring cmd_line, vector<wstring>& output)
 
     // Set Console Ouput Format
     AllocConsole();
-    printf("%d\n", SetConsoleCP(CP_UTF8));
-    printf("%d\n", SetConsoleOutputCP(CP_UTF8));
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
 
     // Setup cmd buffer
     WCHAR* szCmdLine = (WCHAR*)calloc(cmd_line.length() + 1, sizeof(WCHAR));
