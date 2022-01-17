@@ -11,8 +11,10 @@
 using namespace std;
 
 #include <sddl.h>
-DWORD GetFileOwner(wstring path, wstring& domainName, wstring& userName)
+DWORD GetFileOwner(wstring path, USER_INFO& info)
 {
+    info.SID = L""; info.DomainName = L""; info.Name = L"";
+
     if (path.length() == 0)
         return ERROR_INVALID_NAME;
 
@@ -30,30 +32,24 @@ DWORD GetFileOwner(wstring path, wstring& domainName, wstring& userName)
     );
     if (dwStatus)
         return dwStatus;
-       
+      
+    LPWSTR szSid = NULL;
+    if (ConvertSidToStringSidW(pSidOwner, &szSid) == TRUE)
+    {
+        info.SID = szSid;
+        if (szSid != NULL)
+            LocalFree(szSid);
+    }
+
     WCHAR szName[256]; DWORD dwNameLen = 256;
     WCHAR szDomain[256]; DWORD dwDomainLen = 256;
     SID_NAME_USE eUse = SidTypeUnknown;
     dwStatus = (LookupAccountSidW(NULL, pSidOwner, szName, &dwNameLen, szDomain, &dwDomainLen, &eUse) == TRUE)?ERROR_SUCCESS:GetLastError();
     LocalFree(pSecurityDescriptor);
-    if (dwStatus != 0)//ERROR_NONE_MAPPED)
+    if (dwStatus == 0)
     {
-        wstring sid = L"Unknown";
-        LPWSTR szSid = NULL;
-        if (ConvertSidToStringSidW(pSidOwner, &szSid) == TRUE)
-        {
-            sid = szSid;
-            if (szSid != NULL)
-                LocalFree(szSid);
-        }
-        userName = L"<" + sid + L">";
-        domainName = L"";
-        return dwStatus;
-    }
-    else
-    {
-        userName = (szName != NULL) ? wstring(szName, dwNameLen) : L"";
-        domainName = (szDomain != NULL) ? wstring(szDomain, dwDomainLen) : L"";
+        info.Name = (szName != NULL) ? wstring(szName, dwNameLen) : L"";
+        info.DomainName = (szDomain != NULL) ? wstring(szDomain, dwDomainLen) : L"";
     }
 
     return dwStatus;
