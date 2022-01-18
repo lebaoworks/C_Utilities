@@ -1,6 +1,6 @@
 /*
  * NTFS Volume and File Record Class
- * 
+ *
  * Copyright(C) 2010 cyb70289 <cyb70289@gmail.com>
  */
 
@@ -8,13 +8,15 @@
 #define	__NTFS_FILERECORD_H_CYB70289
 
 
-///////////////////////////////////////
-// NTFS Volume forward declaration
-///////////////////////////////////////
+typedef 
+ ///////////////////////////////////////
+ // NTFS Volume forward declaration
+ ///////////////////////////////////////
 class CNTFSVolume
 {
 public:
-	CNTFSVolume(_TCHAR* volume);
+	CNTFSVolume() {}
+	CNTFSVolume(_TCHAR volume);
 	virtual ~CNTFSVolume();
 
 	friend class CFileRecord;
@@ -33,10 +35,10 @@ private:
 
 	// MFT file records ($MFT file itself) may be fragmented
 	// Get $MFT Data attribute to translate FileRecord to correct disk offset
-	CFileRecord *MFTRecord;		// $MFT File Record
-	const CAttrBase *MFTData;	// $MFT Data Attribute
+	CFileRecord* MFTRecord;		// $MFT File Record
+	const CAttrBase* MFTData;	// $MFT Data Attribute
 
-	BOOL OpenVolume(_TCHAR* volume);
+	BOOL OpenVolume(_TCHAR volume);
 
 public:
 	__inline BOOL IsVolumeOK() const;
@@ -72,7 +74,7 @@ template <class TYPE_RESIDENT> class CAttr_AttrList;
 class CFileRecord
 {
 public:
-	CFileRecord(const CNTFSVolume *volume);
+	CFileRecord(const CNTFSVolume* volume);
 	virtual ~CFileRecord();
 
 	friend class CAttrBase;
@@ -85,21 +87,21 @@ public:
 #endif
 
 private:
-	const CNTFSVolume *Volume;
-	FILE_RECORD_HEADER *FileRecord;
+	const CNTFSVolume* Volume;
+	FILE_RECORD_HEADER* FileRecord;
 	ULONGLONG FileReference;
 	ATTR_RAW_CALLBACK AttrRawCallBack[ATTR_NUMS];
 	DWORD AttrMask;
 	CAttrList AttrList[ATTR_NUMS];	// Attributes
 
 	void ClearAttrs();
-	BOOL PatchUS(WORD *sector, int sectors, WORD usn, WORD *usarray);
-	__inline void UserCallBack(DWORD attType, ATTR_HEADER_COMMON *ahc, BOOL *bDiscard);
-	CAttrBase* AllocAttr(ATTR_HEADER_COMMON *ahc, BOOL *bUnhandled);
-	BOOL ParseAttr(ATTR_HEADER_COMMON *ahc);
-	FILE_RECORD_HEADER* ReadFileRecord(ULONGLONG &fileRef);
-	BOOL VisitIndexBlock(const ULONGLONG &vcn, const _TCHAR *fileName, CIndexEntry &ieFound) const;
-	void TraverseSubNode(const ULONGLONG &vcn, SUBENTRY_CALLBACK seCallBack) const;
+	BOOL PatchUS(WORD* sector, int sectors, WORD usn, WORD* usarray);
+	__inline void UserCallBack(DWORD attType, ATTR_HEADER_COMMON* ahc, BOOL* bDiscard);
+	CAttrBase* AllocAttr(ATTR_HEADER_COMMON* ahc, BOOL* bUnhandled);
+	BOOL ParseAttr(ATTR_HEADER_COMMON* ahc);
+	FILE_RECORD_HEADER* ReadFileRecord(ULONGLONG& fileRef);
+	BOOL VisitIndexBlock(const ULONGLONG& vcn, const _TCHAR* fileName, CIndexEntry& ieFound) const;
+	void TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const;
 
 public:
 	BOOL ParseFileRecord(ULONGLONG fileRef);
@@ -109,17 +111,17 @@ public:
 	__inline void ClearAttrRawCB();
 
 	__inline void SetAttrMask(DWORD mask);
-	void TraverseAttrs(ATTRS_CALLBACK attrCallBack, void *context);
+	void TraverseAttrs(ATTRS_CALLBACK attrCallBack, void* context);
 	__inline const CAttrBase* FindFirstAttr(DWORD attrType) const;
 	const CAttrBase* FindNextAttr(DWORD attrType) const;
 
-	int GetFileName(_TCHAR *buf, DWORD bufLen) const;
+	int GetFileName(_TCHAR* buf, DWORD bufLen) const;
 	__inline ULONGLONG GetFileSize() const;
-	void GetFileTime(FILETIME *writeTm, FILETIME *createTm = NULL, FILETIME *accessTm = NULL) const;
+	void GetFileTime(FILETIME* writeTm, FILETIME* createTm = NULL, FILETIME* accessTm = NULL) const;
 
-	void TraverseSubEntries(SUBENTRY_CALLBACK seCallBack) const;
-	__inline const BOOL FindSubEntry(const _TCHAR *fileName, CIndexEntry &ieFound) const;
-	const CAttrBase* FindStream(_TCHAR *name = NULL);
+	void TraverseSubEntries(SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const;
+	__inline const BOOL FindSubEntry(const _TCHAR* fileName, CIndexEntry& ieFound) const;
+	const CAttrBase* FindStream(_TCHAR* name = NULL);
 
 	__inline BOOL IsDeleted() const;
 	__inline BOOL IsDirectory() const;
@@ -135,7 +137,7 @@ public:
 #include "NTFS_Attribute.h"
 
 
-CFileRecord::CFileRecord(const CNTFSVolume *volume)
+CFileRecord::CFileRecord(const CNTFSVolume* volume)
 {
 	_ASSERT(volume);
 	Volume = volume;
@@ -159,20 +161,20 @@ CFileRecord::~CFileRecord()
 // Free all CAttr_xxx
 void CFileRecord::ClearAttrs()
 {
-	for (int i=0; i<ATTR_NUMS; i++)
+	for (int i = 0; i < ATTR_NUMS; i++)
 	{
 		AttrList[i].RemoveAll();
 	}
 }
 
 // Verify US and update sectors
-BOOL CFileRecord::PatchUS(WORD *sector, int sectors, WORD usn, WORD *usarray)
+BOOL CFileRecord::PatchUS(WORD* sector, int sectors, WORD usn, WORD* usarray)
 {
 	int i;
 
-	for (i=0; i<sectors; i++)
+	for (i = 0; i < sectors; i++)
 	{
-		sector += ((Volume->SectorSize>>1) - 1);
+		sector += ((Volume->SectorSize >> 1) - 1);
 		if (*sector != usn)
 			return FALSE;	// USN error
 		*sector = usarray[i];	// Write back correct data
@@ -182,7 +184,7 @@ BOOL CFileRecord::PatchUS(WORD *sector, int sectors, WORD usn, WORD *usarray)
 }
 
 // Call user defined Callback routines for an attribute
-__inline void CFileRecord::UserCallBack(DWORD attType, ATTR_HEADER_COMMON *ahc, BOOL *bDiscard)
+__inline void CFileRecord::UserCallBack(DWORD attType, ATTR_HEADER_COMMON* ahc, BOOL* bDiscard)
 {
 	*bDiscard = FALSE;
 
@@ -192,61 +194,61 @@ __inline void CFileRecord::UserCallBack(DWORD attType, ATTR_HEADER_COMMON *ahc, 
 		Volume->AttrRawCallBack[attType](ahc, bDiscard);
 }
 
-CAttrBase* CFileRecord::AllocAttr(ATTR_HEADER_COMMON *ahc, BOOL *bUnhandled)
+CAttrBase* CFileRecord::AllocAttr(ATTR_HEADER_COMMON* ahc, BOOL* bUnhandled)
 {
 	switch (ahc->Type)
 	{
-		case ATTR_TYPE_STANDARD_INFORMATION:
-			return new CAttr_StdInfo(ahc, this);
+	case ATTR_TYPE_STANDARD_INFORMATION:
+		return new CAttr_StdInfo(ahc, this);
 
-		case ATTR_TYPE_ATTRIBUTE_LIST:
-			if (ahc->NonResident)
-				return new CAttr_AttrList<CAttrNonResident>(ahc, this);
-			else
-				return new CAttr_AttrList<CAttrResident>(ahc, this);
+	case ATTR_TYPE_ATTRIBUTE_LIST:
+		if (ahc->NonResident)
+			return new CAttr_AttrList<CAttrNonResident>(ahc, this);
+		else
+			return new CAttr_AttrList<CAttrResident>(ahc, this);
 
-		case ATTR_TYPE_FILE_NAME:
-			return new CAttr_FileName(ahc, this);
+	case ATTR_TYPE_FILE_NAME:
+		return new CAttr_FileName(ahc, this);
 
-		case ATTR_TYPE_VOLUME_NAME:
-			return new CAttr_VolName(ahc, this);
+	case ATTR_TYPE_VOLUME_NAME:
+		return new CAttr_VolName(ahc, this);
 
-		case ATTR_TYPE_VOLUME_INFORMATION:
-			return new CAttr_VolInfo(ahc, this);
+	case ATTR_TYPE_VOLUME_INFORMATION:
+		return new CAttr_VolInfo(ahc, this);
 
-		case ATTR_TYPE_DATA:
-			if (ahc->NonResident)
-				return new CAttr_Data<CAttrNonResident>(ahc, this);
-			else
-				return new CAttr_Data<CAttrResident>(ahc, this);
+	case ATTR_TYPE_DATA:
+		if (ahc->NonResident)
+			return new CAttr_Data<CAttrNonResident>(ahc, this);
+		else
+			return new CAttr_Data<CAttrResident>(ahc, this);
 
-		case ATTR_TYPE_INDEX_ROOT:
-			return new CAttr_IndexRoot(ahc, this);
+	case ATTR_TYPE_INDEX_ROOT:
+		return new CAttr_IndexRoot(ahc, this);
 
-		case ATTR_TYPE_INDEX_ALLOCATION:
-			return new CAttr_IndexAlloc(ahc, this);
+	case ATTR_TYPE_INDEX_ALLOCATION:
+		return new CAttr_IndexAlloc(ahc, this);
 
-		case ATTR_TYPE_BITMAP:
-			if (ahc->NonResident)
-				return new CAttr_Bitmap<CAttrNonResident>(ahc, this);
-			else
-				// Resident Bitmap may exist in a directory's FileRecord
-				// or in $MFT for a very small volume in theory
-				return new CAttr_Bitmap<CAttrResident>(ahc, this);
+	case ATTR_TYPE_BITMAP:
+		if (ahc->NonResident)
+			return new CAttr_Bitmap<CAttrNonResident>(ahc, this);
+		else
+			// Resident Bitmap may exist in a directory's FileRecord
+			// or in $MFT for a very small volume in theory
+			return new CAttr_Bitmap<CAttrResident>(ahc, this);
 
 		// Unhandled Attributes
-		default:
-			*bUnhandled = TRUE;
-			if (ahc->NonResident)
-				return new CAttrNonResident(ahc, this);
-			else
-				return new CAttrResident(ahc, this);
+	default:
+		*bUnhandled = TRUE;
+		if (ahc->NonResident)
+			return new CAttrNonResident(ahc, this);
+		else
+			return new CAttrResident(ahc, this);
 	}
 }
 
 // Parse a single Attribute
 // Return False on error
-BOOL CFileRecord::ParseAttr(ATTR_HEADER_COMMON *ahc)
+BOOL CFileRecord::ParseAttr(ATTR_HEADER_COMMON* ahc)
 {
 	DWORD attrIndex = ATTR_INDEX(ahc->Type);
 	if (attrIndex < ATTR_NUMS)
@@ -257,7 +259,7 @@ BOOL CFileRecord::ParseAttr(ATTR_HEADER_COMMON *ahc)
 		if (!bDiscard)
 		{
 			BOOL bUnhandled = FALSE;
-			CAttrBase *attr = AllocAttr(ahc, &bUnhandled);
+			CAttrBase* attr = AllocAttr(ahc, &bUnhandled);
 			if (attr)
 			{
 				if (bUnhandled)
@@ -287,33 +289,30 @@ BOOL CFileRecord::ParseAttr(ATTR_HEADER_COMMON *ahc)
 }
 
 // Read File Record
-FILE_RECORD_HEADER* CFileRecord::ReadFileRecord(ULONGLONG &fileRef)
+FILE_RECORD_HEADER* CFileRecord::ReadFileRecord(ULONGLONG& fileRef)
 {
-	FILE_RECORD_HEADER *fr = NULL;
+	FILE_RECORD_HEADER* fr = NULL;
 	DWORD len;
 
 	if (fileRef < MFT_IDX_USER || Volume->MFTData == NULL)
 	{
-		// Take as continuous disk allocation
-		LARGE_INTEGER frAddr;
-		frAddr.QuadPart = Volume->MFTAddr + (Volume->FileRecordSize) * fileRef;
-		frAddr.LowPart = SetFilePointer(Volume->hVolume, frAddr.LowPart, &frAddr.HighPart, FILE_BEGIN);
-
-		if (frAddr.LowPart == DWORD(-1) && GetLastError() != NO_ERROR)
-			return FALSE;
-		else
+		LARGE_INTEGER addr;
+		DWORD ret;
+		addr.QuadPart = Volume->MFTAddr + (Volume->FileRecordSize) * fileRef;
+		if (SetFilePointer(Volume->hVolume, addr.LowPart, &addr.HighPart, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
 		{
-			fr = (FILE_RECORD_HEADER*)new BYTE[Volume->FileRecordSize];
-
-			if (ReadFile(Volume->hVolume, fr, Volume->FileRecordSize, &len, NULL)
-				&& len==Volume->FileRecordSize)
-				return fr;
-			else
-			{
-				delete[] fr;
-				return NULL;
-			}
+			printf("%d\n", GetLastError());
+			return NULL;
 		}
+			
+
+		FILE_RECORD_HEADER* fr = (FILE_RECORD_HEADER*) new BYTE[Volume->FileRecordSize];
+		if (!ReadFile(Volume->hVolume, fr, Volume->FileRecordSize, &ret, NULL) || ret != Volume->FileRecordSize)
+		{
+			delete[] fr;
+			return NULL;
+		}
+		return fr;
 	}
 	else
 	{
@@ -345,7 +344,7 @@ BOOL CFileRecord::ParseFileRecord(ULONGLONG fileRef)
 		FileRecord = NULL;
 	}
 
-	FILE_RECORD_HEADER *fr = ReadFileRecord(fileRef);
+	FILE_RECORD_HEADER* fr = ReadFileRecord(fileRef);
 	if (fr == NULL)
 	{
 		NTFS_TRACE1("Cannot read file record %I64u\n", fileRef);
@@ -359,10 +358,10 @@ BOOL CFileRecord::ParseFileRecord(ULONGLONG fileRef)
 		if (fr->Magic == FILE_RECORD_MAGIC)
 		{
 			// Patch US
-			WORD *usnaddr = (WORD*)((BYTE*)fr + fr->OffsetOfUS);
+			WORD* usnaddr = (WORD*)((BYTE*)fr + fr->OffsetOfUS);
 			WORD usn = *usnaddr;
-			WORD *usarray = usnaddr + 1;
-			if (PatchUS((WORD*)fr, Volume->FileRecordSize/Volume->SectorSize, usn, usarray))
+			WORD* usarray = usnaddr + 1;
+			if (PatchUS((WORD*)fr, Volume->FileRecordSize / Volume->SectorSize, usn, usarray))
 			{
 				NTFS_TRACE1("File Record %I64u Found\n", fileRef);
 				FileRecord = fr;
@@ -379,23 +378,23 @@ BOOL CFileRecord::ParseFileRecord(ULONGLONG fileRef)
 			NTFS_TRACE("Invalid file record\n");
 		}
 
-		delete[] fr;
+		delete fr;
 	}
 
 	return FALSE;
 }
 
 // Visit IndexBlocks recursivly to find a specific FileName
-BOOL CFileRecord::VisitIndexBlock(const ULONGLONG &vcn, const _TCHAR *fileName, CIndexEntry &ieFound) const
+BOOL CFileRecord::VisitIndexBlock(const ULONGLONG& vcn, const _TCHAR* fileName, CIndexEntry& ieFound) const
 {
-	CAttr_IndexAlloc *ia = (CAttr_IndexAlloc*)FindFirstAttr(ATTR_TYPE_INDEX_ALLOCATION);
+	CAttr_IndexAlloc* ia = (CAttr_IndexAlloc*)FindFirstAttr(ATTR_TYPE_INDEX_ALLOCATION);
 	if (ia == NULL)
 		return FALSE;
 
 	CIndexBlock ib;
 	if (ia->ParseIndexBlock(vcn, ib))
 	{
-		CIndexEntry *ie = ib.FindFirstEntry();
+		CIndexEntry* ie = ib.FindFirstEntry();
 		while (ie)
 		{
 			if (ie->HasName())
@@ -437,23 +436,23 @@ BOOL CFileRecord::VisitIndexBlock(const ULONGLONG &vcn, const _TCHAR *fileName, 
 
 // Traverse SubNode recursivly in ascending order
 // Call user defined callback routine once found an subentry
-void CFileRecord::TraverseSubNode(const ULONGLONG &vcn, SUBENTRY_CALLBACK seCallBack) const
+void CFileRecord::TraverseSubNode(const ULONGLONG& vcn, SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const
 {
-	CAttr_IndexAlloc *ia = (CAttr_IndexAlloc*)FindFirstAttr(ATTR_TYPE_INDEX_ALLOCATION);
+	CAttr_IndexAlloc* ia = (CAttr_IndexAlloc*)FindFirstAttr(ATTR_TYPE_INDEX_ALLOCATION);
 	if (ia == NULL)
 		return;
 
 	CIndexBlock ib;
 	if (ia->ParseIndexBlock(vcn, ib))
 	{
-		CIndexEntry *ie = ib.FindFirstEntry();
+		CIndexEntry* ie = ib.FindFirstEntry();
 		while (ie)
 		{
 			if (ie->IsSubNodePtr())
-				TraverseSubNode(ie->GetSubNodeVCN(), seCallBack);	// recursive call
+				TraverseSubNode(ie->GetSubNodeVCN(), seCallBack, callback_param);	// recursive call
 
 			if (ie->HasName())
-				seCallBack(ie);
+				seCallBack(ie, callback_param);
 
 			ie = ib.FindNextEntry();
 		}
@@ -472,10 +471,10 @@ BOOL CFileRecord::ParseAttrs()
 	// Visit all attributes
 
 	DWORD dataPtr = 0;	// guard if data exceeds FileRecordSize bounds
-	ATTR_HEADER_COMMON *ahc = (ATTR_HEADER_COMMON*)((BYTE*)FileRecord + FileRecord->OffsetOfAttr);
+	ATTR_HEADER_COMMON* ahc = (ATTR_HEADER_COMMON*)((BYTE*)FileRecord + FileRecord->OffsetOfAttr);
 	dataPtr += FileRecord->OffsetOfAttr;
 
-	while (ahc->Type != (DWORD)-1 && (dataPtr+ahc->TotalSize) <= Volume->FileRecordSize)
+	while (ahc->Type != (DWORD)-1 && (dataPtr + ahc->TotalSize) <= Volume->FileRecordSize)
 	{
 		if (ATTR_MASK(ahc->Type) & AttrMask)	// Skip unwanted attributes
 		{
@@ -512,7 +511,7 @@ BOOL CFileRecord::InstallAttrRawCB(DWORD attrType, ATTR_RAW_CALLBACK cb)
 // Clear all Attribute CallBack routines
 __inline void CFileRecord::ClearAttrRawCB()
 {
-	for (int i = 0; i < ATTR_NUMS; i ++)
+	for (int i = 0; i < ATTR_NUMS; i++)
 		AttrRawCallBack[i] = NULL;
 }
 
@@ -524,15 +523,15 @@ __inline void CFileRecord::SetAttrMask(DWORD mask)
 }
 
 // Traverse all Attribute and return CAttr_xxx classes to User Callback routine
-void CFileRecord::TraverseAttrs(ATTRS_CALLBACK attrCallBack, void *context)
+void CFileRecord::TraverseAttrs(ATTRS_CALLBACK attrCallBack, void* context)
 {
 	_ASSERT(attrCallBack);
 
-	for (int i = 0; i < ATTR_NUMS; i ++)
+	for (int i = 0; i < ATTR_NUMS; i++)
 	{
-		if (AttrMask & (((DWORD)1)<<i))	// skip masked attributes
+		if (AttrMask & (((DWORD)1) << i))	// skip masked attributes
 		{
-			const CAttrBase *ab = AttrList[i].FindFirstEntry();
+			const CAttrBase* ab = AttrList[i].FindFirstEntry();
 			while (ab)
 			{
 				BOOL bStop;
@@ -563,11 +562,11 @@ const CAttrBase* CFileRecord::FindNextAttr(DWORD attrType) const
 }
 
 // Get File Name (First Win32 name)
-int CFileRecord::GetFileName(_TCHAR *buf, DWORD bufLen) const
+int CFileRecord::GetFileName(_TCHAR* buf, DWORD bufLen) const
 {
 	// A file may have several filenames
 	// Return the first Win32 filename
-	CAttr_FileName *fn = (CAttr_FileName*)AttrList[ATTR_INDEX(ATTR_TYPE_FILE_NAME)].FindFirstEntry();
+	CAttr_FileName* fn = (CAttr_FileName*)AttrList[ATTR_INDEX(ATTR_TYPE_FILE_NAME)].FindFirstEntry();
 	while (fn)
 	{
 		if (fn->IsWin32Name())
@@ -586,15 +585,15 @@ int CFileRecord::GetFileName(_TCHAR *buf, DWORD bufLen) const
 // Get File Size
 __inline ULONGLONG CFileRecord::GetFileSize() const
 {
-	CAttr_FileName *fn = (CAttr_FileName*)AttrList[ATTR_INDEX(ATTR_TYPE_FILE_NAME)].FindFirstEntry();
+	CAttr_FileName* fn = (CAttr_FileName*)AttrList[ATTR_INDEX(ATTR_TYPE_FILE_NAME)].FindFirstEntry();
 	return fn ? fn->GetFileSize() : 0;
 }
 
 // Get File Times
-void CFileRecord::GetFileTime(FILETIME *writeTm, FILETIME *createTm, FILETIME *accessTm) const
+void CFileRecord::GetFileTime(FILETIME* writeTm, FILETIME* createTm, FILETIME* accessTm) const
 {
 	// Standard Information attribute hold the most updated file time
-	CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	if (si)
 		si->GetFileTime(writeTm, createTm, accessTm);
 	else
@@ -616,7 +615,7 @@ void CFileRecord::GetFileTime(FILETIME *writeTm, FILETIME *createTm, FILETIME *a
 
 // Traverse all sub directories and files contained
 // Call user defined callback routine once found an entry
-void CFileRecord::TraverseSubEntries(SUBENTRY_CALLBACK seCallBack) const
+void CFileRecord::TraverseSubEntries(SUBENTRY_CALLBACK seCallBack, PVOID callback_param) const
 {
 	_ASSERT(seCallBack);
 
@@ -626,31 +625,31 @@ void CFileRecord::TraverseSubEntries(SUBENTRY_CALLBACK seCallBack) const
 	if (ir == NULL || !ir->IsFileName())
 		return;
 
-	CIndexEntryList *ieList = (CIndexEntryList*)ir;
-	CIndexEntry *ie = ieList->FindFirstEntry();
+	CIndexEntryList* ieList = (CIndexEntryList*)ir;
+	CIndexEntry* ie = ieList->FindFirstEntry();
 	while (ie)
 	{
 		// Visit subnode first
 		if (ie->IsSubNodePtr())
-			TraverseSubNode(ie->GetSubNodeVCN(), seCallBack);
+			TraverseSubNode(ie->GetSubNodeVCN(), seCallBack, callback_param);
 
 		if (ie->HasName())
-			seCallBack(ie);
+			seCallBack(ie, callback_param);
 
 		ie = ieList->FindNextEntry();
 	}
 }
 
 // Find a specific FileName from InexRoot described B+ tree
-__inline const BOOL CFileRecord::FindSubEntry(const _TCHAR *fileName, CIndexEntry &ieFound) const
+__inline const BOOL CFileRecord::FindSubEntry(const _TCHAR* fileName, CIndexEntry& ieFound) const
 {
 	// Start searching from IndexRoot (B+ tree root node)
-	CAttr_IndexRoot *ir = (CAttr_IndexRoot*)FindFirstAttr(ATTR_TYPE_INDEX_ROOT);
+	CAttr_IndexRoot* ir = (CAttr_IndexRoot*)FindFirstAttr(ATTR_TYPE_INDEX_ROOT);
 	if (ir == NULL || !ir->IsFileName())
 		return FALSE;
 
-	CIndexEntryList *ieList = (CIndexEntryList*)ir;
-	CIndexEntry *ie = ieList->FindFirstEntry();
+	CIndexEntryList* ieList = (CIndexEntryList*)ir;
+	CIndexEntry* ie = ieList->FindFirstEntry();
 	while (ie)
 	{
 		if (ie->HasName())
@@ -690,9 +689,9 @@ __inline const BOOL CFileRecord::FindSubEntry(const _TCHAR *fileName, CIndexEntr
 }
 
 // Find Data attribute class of 
-const CAttrBase* CFileRecord::FindStream(_TCHAR *name)
+const CAttrBase* CFileRecord::FindStream(_TCHAR* name)
 {
-	const CAttrBase *data = FindFirstAttr(ATTR_TYPE_DATA);
+	const CAttrBase* data = FindFirstAttr(ATTR_TYPE_DATA);
 	while (data)
 	{
 		if (data->IsUnNamed() && name == NULL)	// Unnamed stream
@@ -728,37 +727,37 @@ __inline BOOL CFileRecord::IsDirectory() const
 __inline BOOL CFileRecord::IsReadOnly() const
 {
 	// Standard Information attribute holds the most updated file time
-	const CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	const CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	return si ? si->IsReadOnly() : FALSE;
 }
 
 __inline BOOL CFileRecord::IsHidden() const
 {
-	const CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	const CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	return si ? si->IsHidden() : FALSE;
 }
 
 __inline BOOL CFileRecord::IsSystem() const
 {
-	const CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	const CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	return si ? si->IsSystem() : FALSE;
 }
 
 __inline BOOL CFileRecord::IsCompressed() const
 {
-	const CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	const CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	return si ? si->IsCompressed() : FALSE;
 }
 
 __inline BOOL CFileRecord::IsEncrypted() const
 {
-	const CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	const CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	return si ? si->IsEncrypted() : FALSE;
 }
 
 __inline BOOL CFileRecord::IsSparse() const
 {
-	const CAttr_StdInfo *si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
+	const CAttr_StdInfo* si = (CAttr_StdInfo*)AttrList[ATTR_INDEX(ATTR_TYPE_STANDARD_INFORMATION)].FindFirstEntry();
 	return si ? si->IsSparse() : FALSE;
 }
 
@@ -766,7 +765,7 @@ __inline BOOL CFileRecord::IsSparse() const
 ///////////////////////////////////////
 // NTFS Volume Implementation
 ///////////////////////////////////////
-CNTFSVolume::CNTFSVolume(_TCHAR* volume)
+CNTFSVolume::CNTFSVolume(_TCHAR volume)
 {
 	hVolume = INVALID_HANDLE_VALUE;
 	VolumeOK = FALSE;
@@ -781,12 +780,12 @@ CNTFSVolume::CNTFSVolume(_TCHAR* volume)
 	// Verify NTFS volume version (must >= 3.0)
 
 	CFileRecord vol(this);
-	vol.SetAttrMask(MASK_VOLUME_NAME | MASK_VOLUME_INFORMATION);
+	vol.SetAttrMask(MASK_VOLUME_INFORMATION);
 	if (!vol.ParseFileRecord(MFT_IDX_VOLUME))
 		return;
 
 	vol.ParseAttrs();
-	CAttr_VolInfo *vi = (CAttr_VolInfo*)vol.FindFirstAttr(ATTR_TYPE_VOLUME_INFORMATION);
+	CAttr_VolInfo* vi = (CAttr_VolInfo*)vol.FindFirstAttr(ATTR_TYPE_VOLUME_INFORMATION);
 	if (!vi)
 		return;
 
@@ -794,18 +793,6 @@ CNTFSVolume::CNTFSVolume(_TCHAR* volume)
 	NTFS_TRACE2("NTFS volume version: %u.%u\n", HIBYTE(Version), LOBYTE(Version));
 	if (Version < 0x0300)	// NT4 ?
 		return;
-
-#ifdef	_DEBUG
-	CAttr_VolName *vn = (CAttr_VolName*)vol.FindFirstAttr(ATTR_TYPE_VOLUME_NAME);
-	if (vn)
-	{
-		char volname[MAX_PATH];
-		if (vn->GetName(volname, MAX_PATH) > 0)
-		{
-			NTFS_TRACE1("NTFS volume name: %s\n", volname);
-		}
-	}
-#endif
 
 	VolumeOK = TRUE;
 
@@ -825,6 +812,7 @@ CNTFSVolume::CNTFSVolume(_TCHAR* volume)
 
 CNTFSVolume::~CNTFSVolume()
 {
+	printf("Close Volume\n");
 	if (hVolume != INVALID_HANDLE_VALUE)
 		CloseHandle(hVolume);
 
@@ -833,10 +821,9 @@ CNTFSVolume::~CNTFSVolume()
 }
 
 // Open a volume ('a' - 'z', 'A' - 'Z'), get volume handle and BPB
-BOOL CNTFSVolume::OpenVolume(_TCHAR* volume)
+BOOL CNTFSVolume::OpenVolume(_TCHAR volume)
 {
 	// Verify parameter
-	/*
 	if (!_istalpha(volume))
 	{
 		NTFS_TRACE("Volume name error, should be like 'C', 'D'\n");
@@ -846,16 +833,15 @@ BOOL CNTFSVolume::OpenVolume(_TCHAR* volume)
 	_TCHAR volumePath[7];
 	_sntprintf(volumePath, 6, _T("\\\\.\\%c:"), volume);
 	volumePath[6] = _T('\0');
-	*/
-	hVolume = CreateFile(volume, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+
+	hVolume = CreateFile(volumePath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 	if (hVolume != INVALID_HANDLE_VALUE)
 	{
 		DWORD num;
 		NTFS_BPB bpb;
 
 		// Read the first sector (boot sector)
-		if (ReadFile(hVolume, &bpb, 512, &num, NULL) && num==512)
+		if (ReadFile(hVolume, &bpb, 512, &num, NULL) && num == 512)
 		{
 			if (strncmp((const char*)bpb.Signature, NTFS_SIGNATURE, 8) == 0)
 			{
@@ -899,7 +885,7 @@ BOOL CNTFSVolume::OpenVolume(_TCHAR* volume)
 	else
 	{
 		NTFS_TRACE1("Cannnot open volume %c\n", (char)volume);
-IOError:
+	IOError:
 		if (hVolume != INVALID_HANDLE_VALUE)
 		{
 			CloseHandle(hVolume);
@@ -973,7 +959,7 @@ BOOL CNTFSVolume::InstallAttrRawCB(DWORD attrType, ATTR_RAW_CALLBACK cb)
 // Clear all Attribute CallBack routines
 __inline void CNTFSVolume::ClearAttrRawCB()
 {
-	for (int i = 0; i < ATTR_NUMS; i ++)
+	for (int i = 0; i < ATTR_NUMS; i++)
 		AttrRawCallBack[i] = NULL;
 }
 

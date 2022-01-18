@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7f5d7847-337a-41d7-895a-ba4af80a78ff}</ProjectGuid>
+    <ProjectGuid>{2fc857b0-e2cc-4f64-a7ef-32577bf504a4}</ProjectGuid>
     <RootNamespace>Dir</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -86,7 +86,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions); UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -114,9 +114,8 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions); UNICODE; UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +128,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions); UNICODE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -140,19 +139,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dir.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mft.cpp" />
-    <ClCompile Include="subprocess.cpp" />
+    <ClCompile Include="WinQuery.cpp" />
+    <ClCompile Include="WinSec.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cppstring.h" />
+    <ClInclude Include="cpp_string.h" />
+    <ClInclude Include="dir.h" />
     <ClInclude Include="mft.h" />
     <ClInclude Include="NTFSParser\NTFS.h" />
     <ClInclude Include="NTFSParser\NTFS_Attribute.h" />
     <ClInclude Include="NTFSParser\NTFS_Common.h" />
     <ClInclude Include="NTFSParser\NTFS_DataType.h" />
     <ClInclude Include="NTFSParser\NTFS_FileRecord.h" />
-    <ClInclude Include="subprocess.h" />
+    <ClInclude Include="WinQuery.h" />
+    <ClInclude Include="WinSec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,6 +7,11 @@
 
 #include "WinSec.h"
 
+struct STREAM_INFO
+{
+    std::wstring Name;
+    LARGE_INTEGER Size;
+};
 struct FILE_INFO {
     std::wstring Name;
     std::wstring FullName;
@@ -20,5 +25,6 @@ struct FILE_INFO {
     FILETIME MFTCreateTime;
     FILETIME MFTModifyTime;
     FILETIME MFTAccessTime;
+    std::vector<STREAM_INFO> Streams;
 };
 DWORD QueryDirectory(std::wstring path, std::vector<FILE_INFO>& files);

@@ -1,13 +1,13 @@
 /*
  * NTFS data structures and definitions
- * 
+ *
  * Copyright(C) 2010 cyb70289 <cyb70289@gmail.com>
  */
 
 #ifndef	__NTFS_DATATYPE_H_CYB70289
 #define	__NTFS_DATATYPE_H_CYB70289
 
-// NTFS Boot Sector BPB
+ // NTFS Boot Sector BPB
 
 #define	NTFS_SIGNATURE		"NTFS    "
 

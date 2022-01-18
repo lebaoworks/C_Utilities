@@ -1,6 +1,6 @@
 /*
  * NTFS Attribute Classes
- * 
+ *
  * Copyright(C) 2010 cyb70289 <cyb70289@gmail.com>
  */
 
@@ -8,9 +8,9 @@
 #define	__NTFS_ATTRIBUTE_H_CYB70289
 
 
-////////////////////////////////
-// List to hold parsed DataRuns
-////////////////////////////////
+ ////////////////////////////////
+ // List to hold parsed DataRuns
+ ////////////////////////////////
 typedef struct tagDataRun_Entry
 {
 	LONGLONG			LCN;		// -1 to indicate sparse data
@@ -33,16 +33,16 @@ typedef class CSList<CIndexEntry> CIndexEntryList;
 class CAttrBase
 {
 public:
-	CAttrBase(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttrBase(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttrBase();
 
 protected:
-	const ATTR_HEADER_COMMON *AttrHeader;
+	const ATTR_HEADER_COMMON* AttrHeader;
 	WORD _SectorSize;
 	DWORD _ClusterSize;
 	DWORD _IndexBlockSize;
 	HANDLE _hVolume;
-	const CFileRecord *FileRecord;
+	const CFileRecord* FileRecord;
 
 public:
 	__inline const ATTR_HEADER_COMMON* GetAttrHeader() const;
@@ -50,19 +50,19 @@ public:
 	__inline DWORD GetAttrTotalSize() const;
 	__inline BOOL IsNonResident() const;
 	__inline WORD GetAttrFlags() const;
-	int GetAttrName(char *buf, DWORD bufLen) const;
-	int GetAttrName(wchar_t *buf, DWORD bufLen) const;
+	int GetAttrName(char* buf, DWORD bufLen) const;
+	int GetAttrName(wchar_t* buf, DWORD bufLen) const;
 	__inline BOOL IsUnNamed() const;
 
 protected:
 	virtual __inline BOOL IsDataRunOK() const = 0;
 
 public:
-	virtual __inline ULONGLONG GetDataSize(ULONGLONG *allocSize = NULL) const = 0;
-	virtual BOOL ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLen, DWORD *actural) const = 0;
+	virtual __inline ULONGLONG GetDataSize(ULONGLONG* allocSize = NULL) const = 0;
+	virtual BOOL ReadData(const ULONGLONG& offset, void* bufv, DWORD bufLen, DWORD* actural) const = 0;
 };	// CAttrBase
 
-CAttrBase::CAttrBase(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr)
+CAttrBase::CAttrBase(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr)
 {
 	_ASSERT(ahc);
 	_ASSERT(fr);
@@ -107,14 +107,14 @@ __inline WORD CAttrBase::GetAttrFlags() const
 
 // Get ANSI Attribute name
 // Return 0: Unnamed, <0: buffer too small, -buffersize, >0 Name length
-int CAttrBase::GetAttrName(char *buf, DWORD bufLen) const
+int CAttrBase::GetAttrName(char* buf, DWORD bufLen) const
 {
 	if (AttrHeader->NameLength)
 	{
 		if (bufLen < AttrHeader->NameLength)
-			return -1*AttrHeader->NameLength;	// buffer too small
+			return -1 * AttrHeader->NameLength;	// buffer too small
 
-		wchar_t *namePtr = (wchar_t*)((BYTE*)AttrHeader + AttrHeader->NameOffset);
+		wchar_t* namePtr = (wchar_t*)((BYTE*)AttrHeader + AttrHeader->NameOffset);
 		int len = WideCharToMultiByte(CP_ACP, 0, namePtr, AttrHeader->NameLength,
 			buf, bufLen, NULL, NULL);
 		if (len)
@@ -126,7 +126,7 @@ int CAttrBase::GetAttrName(char *buf, DWORD bufLen) const
 		else
 		{
 			NTFS_TRACE("Unrecognized attribute name or Name buffer too small\n");
-			return -1*AttrHeader->NameLength;
+			return -1 * AttrHeader->NameLength;
 		}
 	}
 	else
@@ -138,15 +138,15 @@ int CAttrBase::GetAttrName(char *buf, DWORD bufLen) const
 
 // Get UNICODE Attribute name
 // Return 0: Unnamed, <0: buffer too small, -buffersize, >0 Name length
-int CAttrBase::GetAttrName(wchar_t *buf, DWORD bufLen) const
+int CAttrBase::GetAttrName(wchar_t* buf, DWORD bufLen) const
 {
 	if (AttrHeader->NameLength)
 	{
 		if (bufLen < AttrHeader->NameLength)
-			return -1*AttrHeader->NameLength;	// buffer too small
+			return -1 * AttrHeader->NameLength;	// buffer too small
 
 		bufLen = AttrHeader->NameLength;
-		wchar_t *namePtr = (wchar_t*)((BYTE*)AttrHeader + AttrHeader->NameOffset);
+		wchar_t* namePtr = (wchar_t*)((BYTE*)AttrHeader + AttrHeader->NameOffset);
 		wcsncpy(buf, namePtr, bufLen);
 		buf[bufLen] = '\0\0';
 
@@ -174,22 +174,22 @@ __inline BOOL CAttrBase::IsUnNamed() const
 class CAttrResident : public CAttrBase
 {
 public:
-	CAttrResident(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttrResident(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttrResident();
 
 protected:
-	const ATTR_HEADER_RESIDENT *AttrHeaderR;
-	const void *AttrBody;	// Points to Resident Data
+	const ATTR_HEADER_RESIDENT* AttrHeaderR;
+	const void* AttrBody;	// Points to Resident Data
 	DWORD AttrBodySize;		// Attribute Data Size
 
 	virtual __inline BOOL IsDataRunOK() const;
 
 public:
-	virtual __inline ULONGLONG GetDataSize(ULONGLONG *allocSize = NULL) const;
-	virtual BOOL ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLen, DWORD *actural) const;
+	virtual __inline ULONGLONG GetDataSize(ULONGLONG* allocSize = NULL) const;
+	virtual BOOL ReadData(const ULONGLONG& offset, void* bufv, DWORD bufLen, DWORD* actural) const;
 };	// CAttrResident
 
-CAttrResident::CAttrResident(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrBase(ahc, fr)
+CAttrResident::CAttrResident(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrBase(ahc, fr)
 {
 	AttrHeaderR = (ATTR_HEADER_RESIDENT*)ahc;
 	AttrBody = (void*)((BYTE*)AttrHeaderR + AttrHeaderR->AttrOffset);
@@ -207,7 +207,7 @@ __inline BOOL CAttrResident::IsDataRunOK() const
 
 // Return Actural Data Size
 // *allocSize = Allocated Size
-__inline ULONGLONG CAttrResident::GetDataSize(ULONGLONG *allocSize) const
+__inline ULONGLONG CAttrResident::GetDataSize(ULONGLONG* allocSize) const
 {
 	if (allocSize)
 		*allocSize = AttrBodySize;
@@ -217,7 +217,7 @@ __inline ULONGLONG CAttrResident::GetDataSize(ULONGLONG *allocSize) const
 
 // Read "bufLen" bytes from "offset" into "bufv"
 // Number of bytes acturally read is returned in "*actural"
-BOOL CAttrResident::ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLen, DWORD *actural) const
+BOOL CAttrResident::ReadData(const ULONGLONG& offset, void* bufv, DWORD bufLen, DWORD* actural) const
 {
 	_ASSERT(bufv);
 
@@ -246,31 +246,31 @@ BOOL CAttrResident::ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLen, 
 class CAttrNonResident : public CAttrBase
 {
 public:
-	CAttrNonResident(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttrNonResident(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttrNonResident();
 
 protected:
-	const ATTR_HEADER_NON_RESIDENT *AttrHeaderNR;
+	const ATTR_HEADER_NON_RESIDENT* AttrHeaderNR;
 	CDataRunList DataRunList;
 
 private:
 	BOOL bDataRunOK;
-	BYTE *UnalignedBuf;	// Buffer to hold not cluster aligned data
-	BOOL PickData(const BYTE **dataRun, LONGLONG *length, LONGLONG *LCNOffset);
+	BYTE* UnalignedBuf;	// Buffer to hold not cluster aligned data
+	BOOL PickData(const BYTE** dataRun, LONGLONG* length, LONGLONG* LCNOffset);
 	BOOL ParseDataRun();
-	BOOL ReadClusters(void *buf, DWORD clusters, LONGLONG lcn);
+	BOOL ReadClusters(void* buf, DWORD clusters, LONGLONG lcn);
 	BOOL ReadVirtualClusters(ULONGLONG vcn, DWORD clusters,
-		void *bufv, DWORD bufLen, DWORD *actural);
+		void* bufv, DWORD bufLen, DWORD* actural);
 
 protected:
 	virtual __inline BOOL IsDataRunOK() const;
 
 public:
-	virtual __inline ULONGLONG GetDataSize(ULONGLONG *allocSize = NULL) const;
-	virtual BOOL ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLen, DWORD *actural) const;
+	virtual __inline ULONGLONG GetDataSize(ULONGLONG* allocSize = NULL) const;
+	virtual BOOL ReadData(const ULONGLONG& offset, void* bufv, DWORD bufLen, DWORD* actural) const;
 };	// CAttrNonResident
 
-CAttrNonResident::CAttrNonResident(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrBase(ahc, fr)
+CAttrNonResident::CAttrNonResident(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrBase(ahc, fr)
 {
 	AttrHeaderNR = (ATTR_HEADER_NON_RESIDENT*)ahc;
 
@@ -287,7 +287,7 @@ CAttrNonResident::~CAttrNonResident()
 }
 
 // Parse a single DataRun unit
-BOOL CAttrNonResident::PickData(const BYTE **dataRun, LONGLONG *length, LONGLONG *LCNOffset)
+BOOL CAttrNonResident::PickData(const BYTE** dataRun, LONGLONG* length, LONGLONG* LCNOffset)
 {
 	BYTE size = **dataRun;
 	(*dataRun)++;
@@ -312,7 +312,7 @@ BOOL CAttrNonResident::PickData(const BYTE **dataRun, LONGLONG *length, LONGLONG
 	*LCNOffset = 0;
 	if (offsetBytes)	// Not Sparse File
 	{
-		if ((*dataRun)[offsetBytes-1] & 0x80)
+		if ((*dataRun)[offsetBytes - 1] & 0x80)
 			*LCNOffset = -1;
 		memcpy(LCNOffset, *dataRun, offsetBytes);
 
@@ -327,9 +327,9 @@ BOOL CAttrNonResident::ParseDataRun()
 {
 	NTFS_TRACE("Parsing Non Resident DataRun\n");
 	NTFS_TRACE2("Start VCN = %I64u, End VCN = %I64u\n",
-			AttrHeaderNR->StartVCN, AttrHeaderNR->LastVCN);
+		AttrHeaderNR->StartVCN, AttrHeaderNR->LastVCN);
 
-	const BYTE *dataRun = (BYTE*)AttrHeaderNR + AttrHeaderNR->DataRunOffset;
+	const BYTE* dataRun = (BYTE*)AttrHeaderNR + AttrHeaderNR->DataRunOffset;
 	LONGLONG length;
 	LONGLONG LCNOffset;
 	LONGLONG LCN = 0;
@@ -350,7 +350,7 @@ BOOL CAttrNonResident::ParseDataRun()
 			NTFS_TRACE(LCNOffset == 0 ? ", Sparse Data\n" : "\n");
 
 			// Store LCN, Data size (clusters) into list
-			DataRun_Entry *dr = new DataRun_Entry;
+			DataRun_Entry* dr = new DataRun_Entry;
 			dr->LCN = (LCNOffset == 0) ? -1 : LCN;
 			dr->Clusters = length;
 			dr->StartVCN = VCN;
@@ -380,7 +380,7 @@ BOOL CAttrNonResident::ParseDataRun()
 
 // Read clusters from disk, or sparse data
 // *actural = Clusters acturally read
-BOOL CAttrNonResident::ReadClusters(void *buf, DWORD clusters, LONGLONG lcn)
+BOOL CAttrNonResident::ReadClusters(void* buf, DWORD clusters, LONGLONG lcn)
 {
 	if (lcn == -1)	// sparse data
 	{
@@ -404,8 +404,8 @@ BOOL CAttrNonResident::ReadClusters(void *buf, DWORD clusters, LONGLONG lcn)
 	}
 	else
 	{
-		if (ReadFile(_hVolume, buf, clusters*_ClusterSize, &len, NULL) &&
-			len == clusters*_ClusterSize)
+		if (ReadFile(_hVolume, buf, clusters * _ClusterSize, &len, NULL) &&
+			len == clusters * _ClusterSize)
 		{
 			NTFS_TRACE2("Successfully read %u clusters from LCN %I64d\n", clusters, lcn);
 			return TRUE;
@@ -425,33 +425,33 @@ BOOL CAttrNonResident::ReadClusters(void *buf, DWORD clusters, LONGLONG lcn)
 // bufv, bufLen: Returned data
 // *actural = Number of bytes acturally read
 BOOL CAttrNonResident::ReadVirtualClusters(ULONGLONG vcn, DWORD clusters,
-	void *bufv, DWORD bufLen, DWORD *actural)
+	void* bufv, DWORD bufLen, DWORD* actural)
 {
 	_ASSERT(bufv);
 	_ASSERT(clusters);
 
 	*actural = 0;
-	BYTE *buf = (BYTE*)bufv;
+	BYTE* buf = (BYTE*)bufv;
 
 	// Verify if clusters exceeds DataRun bounds
-	if (vcn + clusters > (AttrHeaderNR->LastVCN - AttrHeaderNR->StartVCN +1))
+	if (vcn + clusters > (AttrHeaderNR->LastVCN - AttrHeaderNR->StartVCN + 1))
 	{
 		NTFS_TRACE("Cluster exceeds DataRun bounds\n");
 		return FALSE;
 	}
 
 	// Verify buffer size
-	if (bufLen < clusters*_ClusterSize)
+	if (bufLen < clusters * _ClusterSize)
 	{
 		NTFS_TRACE("Buffer size too small\n");
 		return FALSE;
 	}
 
 	// Traverse the DataRun List to find the according LCN
-	const DataRun_Entry *dr = DataRunList.FindFirstEntry();
-	while(dr)
+	const DataRun_Entry* dr = DataRunList.FindFirstEntry();
+	while (dr)
 	{
-		if (vcn>=dr->StartVCN && vcn<=dr->LastVCN)
+		if (vcn >= dr->StartVCN && vcn <= dr->LastVCN)
 		{
 			DWORD clustersToRead;
 
@@ -461,9 +461,9 @@ BOOL CAttrNonResident::ReadVirtualClusters(ULONGLONG vcn, DWORD clusters,
 				clustersToRead = (DWORD)vcns;
 			else
 				clustersToRead = clusters;
-			if (ReadClusters(buf, clustersToRead, dr->LCN+(vcn-dr->StartVCN)))
+			if (ReadClusters(buf, clustersToRead, dr->LCN + (vcn - dr->StartVCN)))
 			{
-				buf += clustersToRead*_ClusterSize;
+				buf += clustersToRead * _ClusterSize;
 				clusters -= clustersToRead;
 				*actural += clustersToRead;
 				vcn += clustersToRead;
@@ -490,7 +490,7 @@ __inline BOOL CAttrNonResident::IsDataRunOK() const
 
 // Return Actural Data Size
 // *allocSize = Allocated Size
-__inline ULONGLONG CAttrNonResident::GetDataSize(ULONGLONG *allocSize) const
+__inline ULONGLONG CAttrNonResident::GetDataSize(ULONGLONG* allocSize) const
 {
 	if (allocSize)
 		*allocSize = AttrHeaderNR->AllocSize;
@@ -500,7 +500,7 @@ __inline ULONGLONG CAttrNonResident::GetDataSize(ULONGLONG *allocSize) const
 
 // Read "bufLen" bytes from "offset" into "bufv"
 // Number of bytes acturally read is returned in "*actural"
-BOOL CAttrNonResident::ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLen, DWORD *actural) const
+BOOL CAttrNonResident::ReadData(const ULONGLONG& offset, void* bufv, DWORD bufLen, DWORD* actural) const
 {
 	// Hard disks can only be accessed by sectors
 	// To be simple and efficient, only implemented cluster based accessing
@@ -519,7 +519,7 @@ BOOL CAttrNonResident::ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLe
 		bufLen = (DWORD)(AttrHeaderNR->RealSize - offset);
 
 	DWORD len;
-	BYTE *buf = (BYTE*)bufv;
+	BYTE* buf = (BYTE*)bufv;
 
 	// First cluster Number
 	ULONGLONG startVCN = offset / _ClusterSize;
@@ -549,7 +549,7 @@ BOOL CAttrNonResident::ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLe
 	if (alignedClusters)
 	{
 		// Aligned clusters
-		DWORD alignedSize = alignedClusters*_ClusterSize;
+		DWORD alignedSize = alignedClusters * _ClusterSize;
 		if (((CAttrNonResident*)this)->ReadVirtualClusters(startVCN, alignedClusters, buf, alignedSize, &len)
 			&& len == alignedSize)
 		{
@@ -585,14 +585,14 @@ BOOL CAttrNonResident::ReadData(const ULONGLONG &offset, void *bufv, DWORD bufLe
 class CAttr_StdInfo : public CAttrResident
 {
 public:
-	CAttr_StdInfo(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttr_StdInfo(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttr_StdInfo();
 
 private:
-	const ATTR_STANDARD_INFORMATION *StdInfo;
+	const ATTR_STANDARD_INFORMATION* StdInfo;
 
 public:
-	void GetFileTime(FILETIME *writeTm, FILETIME *createTm = NULL, FILETIME *accessTm = NULL) const;
+	void GetFileTime(FILETIME* writeTm, FILETIME* createTm = NULL, FILETIME* accessTm = NULL) const;
 	__inline DWORD GetFilePermission() const;
 	__inline BOOL IsReadOnly() const;
 	__inline BOOL IsHidden() const;
@@ -601,10 +601,10 @@ public:
 	__inline BOOL IsEncrypted() const;
 	__inline BOOL IsSparse() const;
 
-	static void UTC2Local(const ULONGLONG &ultm, FILETIME *lftm);
+	static void UTC2Local(const ULONGLONG& ultm, FILETIME* lftm);
 };	// CAttr_StdInfo
 
-CAttr_StdInfo::CAttr_StdInfo(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrResident(ahc, fr)
+CAttr_StdInfo::CAttr_StdInfo(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrResident(ahc, fr)
 {
 	NTFS_TRACE("Attribute: Standard Information\n");
 
@@ -617,7 +617,7 @@ CAttr_StdInfo::~CAttr_StdInfo()
 }
 
 // Change from UTC time to local time
-void CAttr_StdInfo::GetFileTime(FILETIME *writeTm, FILETIME *createTm, FILETIME *accessTm) const
+void CAttr_StdInfo::GetFileTime(FILETIME* writeTm, FILETIME* createTm, FILETIME* accessTm) const
 {
 	UTC2Local(StdInfo->AlterTime, writeTm);
 
@@ -664,7 +664,7 @@ __inline BOOL CAttr_StdInfo::IsSparse() const
 }
 
 // UTC filetime to Local filetime
-void CAttr_StdInfo::UTC2Local(const ULONGLONG &ultm, FILETIME *lftm)
+void CAttr_StdInfo::UTC2Local(const ULONGLONG& ultm, FILETIME* lftm)
 {
 	LARGE_INTEGER fti;
 	FILETIME ftt;
@@ -685,24 +685,24 @@ void CAttr_StdInfo::UTC2Local(const ULONGLONG &ultm, FILETIME *lftm)
 class CFileName
 {
 public:
-	CFileName(ATTR_FILE_NAME *fn = NULL);
+	CFileName(ATTR_FILE_NAME* fn = NULL);
 	virtual ~CFileName();
 
 protected:
-	const ATTR_FILE_NAME *FileName;	// May be NULL for an IndexEntry
-	wchar_t *FileNameWUC;	// Uppercase Unicode File Name, used to compare file names
+	const ATTR_FILE_NAME* FileName;	// May be NULL for an IndexEntry
+	wchar_t* FileNameWUC;	// Uppercase Unicode File Name, used to compare file names
 	int FileNameLength;
 	BOOL IsCopy;
 
-	__inline void SetFileName(ATTR_FILE_NAME *fn);
-	void CFileName::CopyFileName(const CFileName *fn, const ATTR_FILE_NAME *afn);
+	__inline void SetFileName(ATTR_FILE_NAME* fn);
+	void CopyFileName(const CFileName* fn, const ATTR_FILE_NAME* afn);
 
 private:
 	void GetFileNameWUC();
 
 public:
-	int Compare(const wchar_t *fn) const;
-	int Compare(const char *fn) const;
+	int Compare(const wchar_t* fn) const;
+	int Compare(const char* fn) const;
 
 	__inline ULONGLONG GetFileSize() const;
 	__inline DWORD GetFilePermission() const;
@@ -714,15 +714,15 @@ public:
 	__inline BOOL IsEncrypted() const;
 	__inline BOOL IsSparse() const;
 
-	int GetFileName(char *buf, DWORD bufLen) const;
-	int GetFileName(wchar_t *buf, DWORD bufLen) const;
+	int GetFileName(char* buf, DWORD bufLen) const;
+	int GetFileName(wchar_t* buf, DWORD bufLen) const;
 	__inline BOOL HasName() const;
 	__inline BOOL IsWin32Name() const;
 
-	void GetFileTime(FILETIME *writeTm, FILETIME *createTm = NULL, FILETIME *accessTm = NULL) const;
+	void GetFileTime(FILETIME* writeTm, FILETIME* createTm = NULL, FILETIME* accessTm = NULL) const;
 };	// CFileName
 
-CFileName::CFileName(ATTR_FILE_NAME *fn)
+CFileName::CFileName(ATTR_FILE_NAME* fn)
 {
 	IsCopy = FALSE;
 
@@ -741,7 +741,7 @@ CFileName::~CFileName()
 		delete FileNameWUC;
 }
 
-__inline void CFileName::SetFileName(ATTR_FILE_NAME *fn)
+__inline void CFileName::SetFileName(ATTR_FILE_NAME* fn)
 {
 	FileName = fn;
 
@@ -749,7 +749,7 @@ __inline void CFileName::SetFileName(ATTR_FILE_NAME *fn)
 }
 
 // Copy pointer buffers
-void CFileName::CopyFileName(const CFileName *fn, const ATTR_FILE_NAME *afn)
+void CFileName::CopyFileName(const CFileName* fn, const ATTR_FILE_NAME* afn)
 {
 	if (!IsCopy)
 	{
@@ -769,7 +769,7 @@ void CFileName::CopyFileName(const CFileName *fn, const ATTR_FILE_NAME *afn)
 
 	if (fn->FileNameWUC)
 	{
-		FileNameWUC = new wchar_t[FileNameLength+1];
+		FileNameWUC = new wchar_t[FileNameLength + 1];
 		wcsncpy(FileNameWUC, fn->FileNameWUC, FileNameLength);
 		FileNameWUC[FileNameLength] = wchar_t('\0');
 	}
@@ -797,8 +797,8 @@ void CFileName::GetFileNameWUC()
 
 	if (FileNameLength > 0)
 	{
-		FileNameWUC = new wchar_t[FileNameLength+1];
-		for (int i=0; i<FileNameLength; i++)
+		FileNameWUC = new wchar_t[FileNameLength + 1];
+		for (int i = 0; i < FileNameLength; i++)
 			FileNameWUC[i] = towupper(fns[i]);
 		FileNameWUC[FileNameLength] = wchar_t('\0');
 	}
@@ -810,24 +810,23 @@ void CFileName::GetFileNameWUC()
 }
 
 // Compare Unicode file name
-int CFileName::Compare(const wchar_t *fn) const
+int CFileName::Compare(const wchar_t* fn) const
 {
 	// Change fn to upper case
-	int len = wcslen(fn);
+	size_t len = wcslen(fn);
 	if (len > MAX_PATH)
 		return 1;	// Assume bigger
 
 	wchar_t fns[MAX_PATH];
-
-	for (int i=0; i<len; i++)
+	memset(fns, 0, MAX_PATH * sizeof(wchar_t));
+	for (int i = 0; i < len; i++)
 		fns[i] = towupper(fn[i]);
-	fns[len] = wchar_t('\0');
 
 	return wcscmp(fns, FileNameWUC);
 }
 
 // Compare ANSI file name
-int CFileName::Compare(const char *fn) const
+int CFileName::Compare(const char* fn) const
 {
 	wchar_t fnw[MAX_PATH];
 
@@ -885,7 +884,7 @@ __inline BOOL CFileName::IsSparse() const
 
 // Get ANSI File Name
 // Return 0: Unnamed, <0: buffer too small, -buffersize, >0 Name length
-int CFileName::GetFileName(char *buf, DWORD bufLen) const
+int CFileName::GetFileName(char* buf, DWORD bufLen) const
 {
 	if (FileName == NULL)
 		return 0;
@@ -895,16 +894,16 @@ int CFileName::GetFileName(char *buf, DWORD bufLen) const
 	if (FileName->NameLength)
 	{
 		if (bufLen < FileName->NameLength)
-			return -1*FileName->NameLength;	// buffer too small
+			return -1 * FileName->NameLength;	// buffer too small
 
 		len = WideCharToMultiByte(CP_ACP, 0, (wchar_t*)FileName->Name, FileName->NameLength,
-				buf, bufLen, NULL, NULL);
+			buf, bufLen, NULL, NULL);
 		if (len)
 		{
 			buf[len] = '\0';
 			NTFS_TRACE1("File Name: %s\n", buf);
-			NTFS_TRACE4("File Permission: %s\t%c%c%c\n", IsDirectory()?"Directory":"File",
-				IsReadOnly()?'R':' ', IsHidden()?'H':' ', IsSystem()?'S':' ');
+			NTFS_TRACE4("File Permission: %s\t%c%c%c\n", IsDirectory() ? "Directory" : "File",
+				IsReadOnly() ? 'R' : ' ', IsHidden() ? 'H' : ' ', IsSystem() ? 'S' : ' ');
 		}
 		else
 		{
@@ -917,7 +916,7 @@ int CFileName::GetFileName(char *buf, DWORD bufLen) const
 
 // Get Unicode File Name
 // Return 0: Unnamed, <0: buffer too small, -buffersize, >0 Name length
-int CFileName::GetFileName(wchar_t *buf, DWORD bufLen) const
+int CFileName::GetFileName(wchar_t* buf, DWORD bufLen) const
 {
 	if (FileName == NULL)
 		return 0;
@@ -925,7 +924,7 @@ int CFileName::GetFileName(wchar_t *buf, DWORD bufLen) const
 	if (FileName->NameLength)
 	{
 		if (bufLen < FileName->NameLength)
-			return -1*FileName->NameLength;	// buffer too small
+			return -1 * FileName->NameLength;	// buffer too small
 
 		bufLen = FileName->NameLength;
 		wcsncpy(buf, (wchar_t*)FileName->Name, bufLen);
@@ -951,7 +950,7 @@ __inline BOOL CFileName::IsWin32Name() const
 }
 
 // Change from UTC time to local time
-void CFileName::GetFileTime(FILETIME *writeTm, FILETIME *createTm, FILETIME *accessTm) const
+void CFileName::GetFileTime(FILETIME* writeTm, FILETIME* createTm, FILETIME* accessTm) const
 {
 	CAttr_StdInfo::UTC2Local(FileName ? FileName->AlterTime : 0, writeTm);
 
@@ -969,7 +968,7 @@ void CFileName::GetFileTime(FILETIME *writeTm, FILETIME *createTm, FILETIME *acc
 class CAttr_FileName : public CAttrResident, public CFileName
 {
 public:
-	CAttr_FileName(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrResident(ahc, fr)
+	CAttr_FileName(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrResident(ahc, fr)
 	{
 		NTFS_TRACE("Attribute: File Name\n");
 
@@ -985,8 +984,8 @@ private:
 	// File permission and time in $FILE_NAME only updates when the filename changes
 	// So hide these functions to prevent user from getting the error information
 	// Standard Information and IndexEntry keeps the most recent file time and permission infomation
-	void GetFileTime(FILETIME *writeTm, FILETIME *createTm = NULL, FILETIME *accessTm = NULL) const {}
-	__inline DWORD GetFilePermission(){}
+	void GetFileTime(FILETIME* writeTm, FILETIME* createTm = NULL, FILETIME* accessTm = NULL) const {}
+	__inline DWORD GetFilePermission() {}
 	__inline BOOL IsReadOnly() const {}
 	__inline BOOL IsHidden() const {}
 	__inline BOOL IsSystem() const {}
@@ -1002,7 +1001,7 @@ private:
 class CAttr_VolInfo : public CAttrResident
 {
 public:
-	CAttr_VolInfo(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrResident(ahc, fr)
+	CAttr_VolInfo(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrResident(ahc, fr)
 	{
 		NTFS_TRACE("Attribute: Volume Information\n");
 
@@ -1015,7 +1014,7 @@ public:
 	}
 
 private:
-	const ATTR_VOLUME_INFORMATION *VolInfo;
+	const ATTR_VOLUME_INFORMATION* VolInfo;
 
 public:
 	// Get NTFS Volume Version
@@ -1032,13 +1031,13 @@ public:
 class CAttr_VolName : public CAttrResident
 {
 public:
-	CAttr_VolName(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrResident(ahc, fr)
+	CAttr_VolName(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrResident(ahc, fr)
 	{
 		NTFS_TRACE("Attribute: Volume Name\n");
 
 		NameLength = AttrBodySize >> 1;
-		VolNameU = new wchar_t[NameLength+1];
-		VolNameA = new char[NameLength+1];
+		VolNameU = new wchar_t[NameLength + 1];
+		VolNameA = new char[NameLength + 1];
 
 		memcpy(VolNameU, AttrBody, AttrBodySize);
 		VolNameU[NameLength] = wchar_t('\0');
@@ -1057,28 +1056,28 @@ public:
 	}
 
 private:
-	wchar_t *VolNameU;
-	char *VolNameA;
+	wchar_t* VolNameU;
+	char* VolNameA;
 	DWORD NameLength;
 
 public:
 	// Get NTFS Volume Unicode Name
-	__inline int GetName(wchar_t *buf, DWORD len) const
+	__inline int GetName(wchar_t* buf, DWORD len) const
 	{
 		if (len < NameLength)
-			return -1*NameLength;	// buffer too small
+			return -1 * NameLength;	// buffer too small
 
-		wcsncpy(buf, VolNameU, NameLength+1);
+		wcsncpy(buf, VolNameU, NameLength + 1);
 		return NameLength;
 	}
 
 	// ANSI Name
-	__inline int GetName(char *buf, DWORD len) const
+	__inline int GetName(char* buf, DWORD len) const
 	{
 		if (len < NameLength)
-			return -1*NameLength;	// buffer too small
+			return -1 * NameLength;	// buffer too small
 
-		strncpy(buf, VolNameA, NameLength+1);
+		strncpy(buf, VolNameA, NameLength + 1);
 		return NameLength;
 	}
 }; // CAttr_VolInfo
@@ -1091,9 +1090,9 @@ template <class TYPE_RESIDENT>
 class CAttr_Data : public TYPE_RESIDENT
 {
 public:
-	CAttr_Data(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : TYPE_RESIDENT(ahc, fr)
+	CAttr_Data(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : TYPE_RESIDENT(ahc, fr)
 	{
-		NTFS_TRACE1("Attribute: Data (%sResident)\n", IsNonResident() ? "Non" : "");
+		NTFS_TRACE1("Attribute: Data (%sResident)\n", this->IsNonResident() ? "Non" : "");
 	}
 
 	virtual ~CAttr_Data()
@@ -1119,7 +1118,7 @@ public:
 		SetFileName(NULL);
 	}
 
-	CIndexEntry(const INDEX_ENTRY *ie)
+	CIndexEntry(const INDEX_ENTRY* ie)
 	{
 		NTFS_TRACE("Index Entry\n");
 
@@ -1158,11 +1157,11 @@ private:
 	BOOL IsDefault;
 
 protected:
-	const INDEX_ENTRY *IndexEntry;
+	const INDEX_ENTRY* IndexEntry;
 
 public:
 	// Use with caution !
-	CIndexEntry& operator = (const CIndexEntry &ieClass)
+	CIndexEntry& operator = (const CIndexEntry& ieClass)
 	{
 		if (!IsDefault)
 		{
@@ -1180,7 +1179,7 @@ public:
 			IndexEntry = NULL;
 		}
 
-		const INDEX_ENTRY *ie = ieClass.IndexEntry;
+		const INDEX_ENTRY* ie = ieClass.IndexEntry;
 		_ASSERT(ie && (ie->Size > 0));
 
 		IndexEntry = (INDEX_ENTRY*)new BYTE[ie->Size];
@@ -1238,10 +1237,10 @@ public:
 	}
 
 private:
-	INDEX_BLOCK *IndexBlock;
+	INDEX_BLOCK* IndexBlock;
 
 public:
-	INDEX_BLOCK *AllocIndexBlock(DWORD size)
+	INDEX_BLOCK* AllocIndexBlock(DWORD size)
 	{
 		// Free previous data if any
 		if (GetCount() > 0)
@@ -1262,11 +1261,11 @@ public:
 class CAttr_IndexRoot : public CAttrResident, public CIndexEntryList
 {
 public:
-	CAttr_IndexRoot(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttr_IndexRoot(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttr_IndexRoot();
 
 private:
-	const ATTR_INDEX_ROOT *IndexRoot;
+	const ATTR_INDEX_ROOT* IndexRoot;
 
 	void ParseIndexEntries();
 
@@ -1274,7 +1273,7 @@ public:
 	__inline BOOL IsFileName() const;
 };	// CAttr_IndexRoot
 
-CAttr_IndexRoot::CAttr_IndexRoot(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr): CAttrResident(ahc, fr)
+CAttr_IndexRoot::CAttr_IndexRoot(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrResident(ahc, fr)
 {
 	NTFS_TRACE("Attribute: Index Root\n");
 
@@ -1298,14 +1297,14 @@ CAttr_IndexRoot::~CAttr_IndexRoot()
 // Get all the index entries
 void CAttr_IndexRoot::ParseIndexEntries()
 {
-	INDEX_ENTRY *ie;
+	INDEX_ENTRY* ie;
 	ie = (INDEX_ENTRY*)((BYTE*)(&(IndexRoot->EntryOffset)) + IndexRoot->EntryOffset);
 
 	DWORD ieTotal = ie->Size;
 
 	while (ieTotal <= IndexRoot->TotalEntrySize)
 	{
-		CIndexEntry *ieClass = new CIndexEntry(ie);
+		CIndexEntry* ieClass = new CIndexEntry(ie);
 		InsertEntry(ieClass);
 
 		if (ie->Flags & INDEX_ENTRY_FLAG_LAST)
@@ -1332,20 +1331,20 @@ __inline BOOL CAttr_IndexRoot::IsFileName() const
 class CAttr_IndexAlloc : public CAttrNonResident
 {
 public:
-	CAttr_IndexAlloc(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttr_IndexAlloc(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttr_IndexAlloc();
 
 private:
 	ULONGLONG IndexBlockCount;
 
-	BOOL PatchUS(WORD *sector, int sectors, WORD usn, WORD *usarray);
+	BOOL PatchUS(WORD* sector, int sectors, WORD usn, WORD* usarray);
 
 public:
 	__inline ULONGLONG GetIndexBlockCount();
-	BOOL ParseIndexBlock(const ULONGLONG &vcn, CIndexBlock &ibClass);
+	BOOL ParseIndexBlock(const ULONGLONG& vcn, CIndexBlock& ibClass);
 };	// CAttr_IndexAlloc
 
-CAttr_IndexAlloc::CAttr_IndexAlloc(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : CAttrNonResident(ahc, fr)
+CAttr_IndexAlloc::CAttr_IndexAlloc(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : CAttrNonResident(ahc, fr)
 {
 	NTFS_TRACE("Attribute: Index Allocation\n");
 
@@ -1359,7 +1358,7 @@ CAttr_IndexAlloc::CAttr_IndexAlloc(const ATTR_HEADER_COMMON *ahc, const CFileRec
 		if (ibTotalSize % _IndexBlockSize)
 		{
 			NTFS_TRACE2("Cannot calulate number of IndexBlocks, total size = %I64u, unit = %u\n",
-					ibTotalSize, _IndexBlockSize);
+				ibTotalSize, _IndexBlockSize);
 			return;
 		}
 		IndexBlockCount = ibTotalSize / _IndexBlockSize;
@@ -1376,13 +1375,13 @@ CAttr_IndexAlloc::~CAttr_IndexAlloc()
 }
 
 // Verify US and update sectors
-BOOL CAttr_IndexAlloc::PatchUS(WORD *sector, int sectors, WORD usn, WORD *usarray)
+BOOL CAttr_IndexAlloc::PatchUS(WORD* sector, int sectors, WORD usn, WORD* usarray)
 {
 	int i;
 
-	for (i=0; i<sectors; i++)
+	for (i = 0; i < sectors; i++)
 	{
-		sector += ((_SectorSize>>1) - 1);
+		sector += ((_SectorSize >> 1) - 1);
 		if (*sector != usn)
 			return FALSE;		// USN error
 		*sector = usarray[i];	// Write back correct data
@@ -1399,20 +1398,20 @@ __inline ULONGLONG CAttr_IndexAlloc::GetIndexBlockCount()
 // Parse a single Index Block
 // vcn = Index Block VCN in Index Allocation Data Attributes
 // ibClass holds the parsed Index Entries
-BOOL CAttr_IndexAlloc::ParseIndexBlock(const ULONGLONG &vcn, CIndexBlock &ibClass)
+BOOL CAttr_IndexAlloc::ParseIndexBlock(const ULONGLONG& vcn, CIndexBlock& ibClass)
 {
 	if (vcn >= IndexBlockCount)	// Bounds check
 		return FALSE;
 
 	// Allocate buffer for a single Index Block
-	INDEX_BLOCK *ibBuf = ibClass.AllocIndexBlock(_IndexBlockSize);
+	INDEX_BLOCK* ibBuf = ibClass.AllocIndexBlock(_IndexBlockSize);
 
 	// Sectors Per Index Block
 	DWORD sectors = _IndexBlockSize / _SectorSize;
 
 	// Read one Index Block
 	DWORD len;
-	if (ReadData(vcn*_ClusterSize, ibBuf, _IndexBlockSize, &len) &&
+	if (ReadData(vcn * _IndexBlockSize, ibBuf, _IndexBlockSize, &len) &&
 		len == _IndexBlockSize)
 	{
 		if (ibBuf->Magic != INDEX_BLOCK_MAGIC)
@@ -1422,23 +1421,23 @@ BOOL CAttr_IndexAlloc::ParseIndexBlock(const ULONGLONG &vcn, CIndexBlock &ibClas
 		}
 
 		// Patch US
-		WORD *usnaddr = (WORD*)((BYTE*)ibBuf + ibBuf->OffsetOfUS);
+		WORD* usnaddr = (WORD*)((BYTE*)ibBuf + ibBuf->OffsetOfUS);
 		WORD usn = *usnaddr;
-		WORD *usarray = usnaddr + 1;
+		WORD* usarray = usnaddr + 1;
 		if (!PatchUS((WORD*)ibBuf, sectors, usn, usarray))
 		{
 			NTFS_TRACE("Index Block parse error: Update Sequence Number\n");
 			return FALSE;
 		}
 
-		INDEX_ENTRY *ie;
+		INDEX_ENTRY* ie;
 		ie = (INDEX_ENTRY*)((BYTE*)(&(ibBuf->EntryOffset)) + ibBuf->EntryOffset);
 
 		DWORD ieTotal = ie->Size;
 
 		while (ieTotal <= ibBuf->TotalEntrySize)
 		{
-			CIndexEntry *ieClass = new CIndexEntry(ie);
+			CIndexEntry* ieClass = new CIndexEntry(ie);
 			ibClass.InsertEntry(ieClass);
 
 			if (ie->Flags & INDEX_ENTRY_FLAG_LAST)
@@ -1465,37 +1464,37 @@ template <class TYPE_RESIDENT>
 class CAttr_Bitmap : public TYPE_RESIDENT
 {
 public:
-	CAttr_Bitmap(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttr_Bitmap(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttr_Bitmap();
 
 private:
 	ULONGLONG BitmapSize;	// Bitmap data size
-	BYTE *BitmapBuf;		// Bitmap data buffer
+	BYTE* BitmapBuf;		// Bitmap data buffer
 	LONGLONG CurrentCluster;
 
 public:
-	BOOL IsClusterFree(const ULONGLONG &cluster) const;
+	BOOL IsClusterFree(const ULONGLONG& cluster) const;
 };	// CAttr_Bitmap
 
 template <class TYPE_RESIDENT>
-CAttr_Bitmap<TYPE_RESIDENT>::CAttr_Bitmap(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : TYPE_RESIDENT(ahc, fr)
+CAttr_Bitmap<TYPE_RESIDENT>::CAttr_Bitmap(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : TYPE_RESIDENT(ahc, fr)
 {
-	NTFS_TRACE1("Attribute: Bitmap (%sResident)\n", IsNonResident() ? "Non" : "");
+	NTFS_TRACE1("Attribute: Bitmap (%sResident)\n", this->IsNonResident() ? "Non" : "");
 
 	CurrentCluster = -1;
 
-	if (IsDataRunOK())
+	if (this->IsDataRunOK())
 	{
-		BitmapSize = GetDataSize();
+		BitmapSize = this->GetDataSize();
 
-		if (IsNonResident())
-			BitmapBuf = new BYTE[_ClusterSize];
+		if (this->IsNonResident())
+			BitmapBuf = new BYTE[this->_ClusterSize];
 		else
 		{
 			BitmapBuf = new BYTE[(DWORD)BitmapSize];
 
 			DWORD len;
-			if (!(ReadData(0, BitmapBuf, (DWORD)BitmapSize, &len)
+			if (!(this->ReadData(0, BitmapBuf, (DWORD)BitmapSize, &len)
 				&& len == (DWORD)BitmapSize))
 			{
 				BitmapBuf = NULL;
@@ -1525,18 +1524,18 @@ CAttr_Bitmap<TYPE_RESIDENT>::~CAttr_Bitmap()
 
 // Verify if a single cluster is free
 template <class TYPE_RESIDENT>
-BOOL CAttr_Bitmap<TYPE_RESIDENT>::IsClusterFree(const ULONGLONG &cluster) const
+BOOL CAttr_Bitmap<TYPE_RESIDENT>::IsClusterFree(const ULONGLONG& cluster) const
 {
-	if (!IsDataRunOK() || !BitmapBuf)
+	if (!this->IsDataRunOK() || !BitmapBuf)
 		return FALSE;
 
-	if (IsNonResident())
+	if (this->IsNonResident())
 	{
 		LONGLONG idx = (LONGLONG)cluster >> 3;
-		DWORD clusterSize = ((CNTFSVolume*)Volume)->GetClusterSize();
+		DWORD clusterSize = ((CNTFSVolume*)this->Volume)->GetClusterSize();
 
-		LONGLONG clusterOffset = idx/clusterSize;
-		cluster -= (clusterOffset*clusterSize*8);
+		LONGLONG clusterOffset = idx / clusterSize;
+		cluster -= (clusterOffset * clusterSize * 8);
 
 		// Read one cluster of data if buffer mismatch
 		if (CurrentCluster != clusterOffset)
@@ -1556,7 +1555,7 @@ BOOL CAttr_Bitmap<TYPE_RESIDENT>::IsClusterFree(const ULONGLONG &cluster) const
 
 	// All the Bitmap data is already in BitmapBuf
 	DWORD idx = (DWORD)(cluster >> 3);
-	if (IsNonResident() == FALSE)
+	if (this->IsNonResident() == FALSE)
 	{
 		if (idx >= BitmapSize)
 			return TRUE;	// Resident data bounds check error
@@ -1564,7 +1563,7 @@ BOOL CAttr_Bitmap<TYPE_RESIDENT>::IsClusterFree(const ULONGLONG &cluster) const
 
 	BYTE fac = (BYTE)(cluster % 8);
 
-	return ((BitmapBuf[idx] & (1<<fac)) == 0);
+	return ((BitmapBuf[idx] & (1 << fac)) == 0);
 }
 
 
@@ -1580,7 +1579,7 @@ template <class TYPE_RESIDENT>
 class CAttr_AttrList : public TYPE_RESIDENT
 {
 public:
-	CAttr_AttrList(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr);
+	CAttr_AttrList(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr);
 	virtual ~CAttr_AttrList();
 
 private:
@@ -1588,7 +1587,7 @@ private:
 };	// CAttr_AttrList
 
 template <class TYPE_RESIDENT>
-CAttr_AttrList<TYPE_RESIDENT>::CAttr_AttrList(const ATTR_HEADER_COMMON *ahc, const CFileRecord *fr) : TYPE_RESIDENT(ahc, fr)
+CAttr_AttrList<TYPE_RESIDENT>::CAttr_AttrList(const ATTR_HEADER_COMMON* ahc, const CFileRecord* fr) : TYPE_RESIDENT(ahc, fr)
 {
 	NTFS_TRACE("Attribute: Attribute List\n");
 	if (fr->FileReference == (ULONGLONG)-1)
@@ -1598,7 +1597,7 @@ CAttr_AttrList<TYPE_RESIDENT>::CAttr_AttrList(const ATTR_HEADER_COMMON *ahc, con
 	DWORD len;
 	ATTR_ATTRIBUTE_LIST alRecord;
 
-	while (ReadData(offset, &alRecord, sizeof(ATTR_ATTRIBUTE_LIST), &len) &&
+	while (this->ReadData(offset, &alRecord, sizeof(ATTR_ATTRIBUTE_LIST), &len) &&
 		len == sizeof(ATTR_ATTRIBUTE_LIST))
 	{
 		if (ATTR_INDEX(alRecord.AttrType) > ATTR_NUMS)
@@ -1615,7 +1614,7 @@ CAttr_AttrList<TYPE_RESIDENT>::CAttr_AttrList(const ATTR_HEADER_COMMON *ahc, con
 			DWORD am = ATTR_MASK(alRecord.AttrType);
 			if (am & fr->AttrMask)	// Skip unwanted attributes
 			{
-				CFileRecord *frnew = new CFileRecord(fr->Volume);
+				CFileRecord* frnew = new CFileRecord(fr->Volume);
 				FileRecordList.InsertEntry(frnew);
 
 				frnew->AttrMask = am;
@@ -1627,10 +1626,10 @@ CAttr_AttrList<TYPE_RESIDENT>::CAttr_AttrList(const ATTR_HEADER_COMMON *ahc, con
 				frnew->ParseAttrs();
 
 				// Insert new found AttrList to fr->AttrList
-				const CAttrBase *ab = (CAttrBase*)frnew->FindFirstAttr(alRecord.AttrType);
+				const CAttrBase* ab = (CAttrBase*)frnew->FindFirstAttr(alRecord.AttrType);
 				while (ab)
 				{
-					CAttrList *al = (CAttrList*)&fr->AttrList[ATTR_INDEX(alRecord.AttrType)];
+					CAttrList* al = (CAttrList*)&fr->AttrList[ATTR_INDEX(alRecord.AttrType)];
 					al->InsertEntry((CAttrBase*)ab);
 					ab = frnew->FindNextAttr(alRecord.AttrType);
 				}

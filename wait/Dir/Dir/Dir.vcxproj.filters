@@ -5,30 +5,42 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
     <Filter Include="NTFSParser">
-      <UniqueIdentifier>{61ca0f55-3958-4a9b-8a6a-9afca09f7c87}</UniqueIdentifier>
+      <UniqueIdentifier>{9d147440-2274-43c3-9b18-ccc82c967b87}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="dir.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="subprocess.cpp">
+    <ClCompile Include="WinSec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WinQuery.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="WinSec.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WinQuery.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="NTFSParser\NTFS.h">
       <Filter>NTFSParser</Filter>
     </ClInclude>
@@ -44,13 +56,13 @@
     <ClInclude Include="NTFSParser\NTFS_FileRecord.h">
       <Filter>NTFSParser</Filter>
     </ClInclude>
-    <ClInclude Include="subprocess.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="mft.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="cppstring.h">
+    <ClInclude Include="dir.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cpp_string.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
